@@ -224,13 +224,22 @@ reason, ask first, the same way merging into `master` itself needs asking.
   either way. The `approved` column (below) is the first change made under
   this rule — `0002_add_approved_column.sql` is a genuine new migration
   (`ALTER TABLE` + a backfill `UPDATE`), not a further edit to 0001.
-- The plan (per the brief and how this was scoped when scaffolded) is to grow
-  the fact list beyond the ~15-row seed later — either more curated rows or a
-  one-off fetch from an external source, loaded the same way `seed.sql` is,
-  not by adding a live external API call to the request path. `getRandomFact`
-  in `src/lib/facts.ts` uses `ORDER BY RANDOM() LIMIT 1`, a full-table scan —
-  fine at a curated-list size, reconsider if the table ever grows to genuinely
-  large (thousands+) rows.
+- The plan (per the brief and how this was scoped when scaffolded) is to keep
+  growing the curated fact list over time — `seed.sql` went from 15 to 30
+  rows in one pass already — either more curated rows or a one-off fetch
+  from an external source, loaded the same way, not by adding a live
+  external API call to the request path. `getRandomFact` in
+  `src/lib/facts.ts` uses `ORDER BY RANDOM() LIMIT 1`, a full-table scan —
+  fine at a curated-list size, reconsider if the table ever grows to
+  genuinely large (thousands+) rows.
+- **Growing `seed.sql` after it's already been run somewhere doesn't mean
+  re-running the whole file** — that duplicates every row already loaded
+  (see the note at the top of `seed.sql` itself). Append the new rows to
+  `seed.sql` (so a *fresh* database gets the complete list from one run),
+  then apply just the new rows by hand to any database that's already
+  seeded — a one-off `INSERT` with only the delta, via `wrangler d1 execute
+  --file`, not `npm run db:seed:*`. That's how the second batch of 15 (bringing
+  the total to 30) was actually loaded onto the real remote database.
 - `toPublicFactId` in the same file formats the row's autoincrement `id` as
   the public `uiaas_00042`-style id — the public id is derived, not stored.
 - **The "Enterprise has a higher average Negative Usefulness Index than
