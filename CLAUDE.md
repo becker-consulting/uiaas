@@ -207,7 +207,9 @@ reason, ask first, the same way merging into `master` itself needs asking.
   approved = TRUE`, cached at the edge** — `getApprovedFactCountCached` in
   `src/lib/facts.ts` uses the Workers Cache API (`caches.default`, a runtime
   global — no binding to declare, no KV namespace to provision) rather than
-  querying D1 on every landing-page view. 5-minute TTL (`FACT_COUNT_CACHE_TTL_SECONDS`).
+  querying D1 on every landing-page view. 5-minute TTL
+  (`APPROVED_FACTS_CACHE_TTL_SECONDS`, shared with `getApprovedFactsCached`
+  below — same staleness tradeoff, one constant for both).
   The cache-miss path `await`s the write-back inline instead of using
   `ctx.waitUntil()` — a deliberate simplicity-over-latency call, since it
   only costs the one request per TTL window that happens to repopulate the
@@ -217,6 +219,21 @@ reason, ask first, the same way merging into `master` itself needs asking.
   number renders — `test/api.test.ts`'s "Fact count caching" block inserts
   an approved row between two cached reads and asserts the second read is
   still stale, then confirms the uncached query sees the change.
+- **`getRandomFact` reads an edge-cached list, not `ORDER BY RANDOM() LIMIT
+  1`** — that used to be a full-table scan (SQLite computes and sorts a
+  random key for every matching row before picking the top one), fine at
+  30 rows but not something to keep once the curated list headed toward
+  "genuinely large (thousands+)" territory (see the seed-growth note
+  below — it's grown to ~90 rows as of the September 2026 fact-drip pass).
+  `getApprovedFactsCached` caches every approved row via the same
+  `caches.default` pattern, TTL, and inline-await-on-miss tradeoff as the
+  count cache directly above (sharing its `APPROVED_FACTS_CACHE_TTL_SECONDS`),
+  and `getRandomFact` picks randomly from that cached array in Worker code
+  instead of asking D1 to. Zero D1 reads at all on a cache hit; one
+  unsorted scan (not a sorted one) on a miss. Same staleness tradeoff as
+  the count badge — a fact approved or unapproved in the last 5 minutes
+  might not be reflected instantly. Exported and independently tested the
+  same way as the count cache (`test/api.test.ts`).
 - **`usefulness` is the Negative Usefulness Index™** — zero or lower, enforced
   by a `CHECK (usefulness <= 0)` constraint on the column (0 is the *best* a
   fact can score: perfectly useless, as advertised). `uselessnessLabel()` in
@@ -243,9 +260,25 @@ reason, ask first, the same way merging into `master` itself needs asking.
   rows in one pass already — either more curated rows or a one-off fetch
   from an external source, loaded the same way, not by adding a live
   external API call to the request path. `getRandomFact` in
-  `src/lib/facts.ts` uses `ORDER BY RANDOM() LIMIT 1`, a full-table scan —
-  fine at a curated-list size, reconsider if the table ever grows to
-  genuinely large (thousands+) rows.
+  `src/lib/facts.ts` no longer does the naive thing here (see the "N FACTS
+  IN PRODUCTION" bullet above for the current cached-list approach) — that
+  rewrite happened specifically *because* a September 2026 growth pass (see
+  below) pushed the table toward the size where the old
+  `ORDER BY RANDOM() LIMIT 1` full-table-scan approach stopped being a
+  "later" problem.
+- **The remote production database currently has ~90 approved rows,
+  `seed.sql` only has 30 — this is a deliberate, known divergence, not
+  drift to fix.** A September 2026 pass added ~59 more curated facts
+  directly to the remote D1 database (`wrangler d1 execute uiaas-db
+  --remote`, drip-fed in small batches over a few hours to look like
+  organic growth against the live "N facts in production" badge) at the
+  user's explicit instruction to leave `seed.sql` untouched — production-DB-only,
+  no seed file change, no migration, no commit. That means a *fresh* local
+  or remote database seeded from `seed.sql` today will only get the
+  original 30 rows, not the full curated set — if `seed.sql` is ever
+  meant to catch up to production parity, that needs its own explicit ask,
+  the same way the 15→30 growth pass folded its rows into `seed.sql`
+  (unlike this one, deliberately).
 - **Growing `seed.sql` after it's already been run somewhere doesn't mean
   re-running the whole file** — that duplicates every row already loaded
   (see the note at the top of `seed.sql` itself). Append the new rows to

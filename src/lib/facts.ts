@@ -11,15 +11,21 @@ export type FactRow = {
  * unapproved by default and won't be returned here until it's reviewed —
  * there's no admin UI for that yet, just direct DB access.
  *
- * `ORDER BY RANDOM()` is a full-table scan — fine at this table's expected
- * size (a curated/occasionally-fetched fact list, not user-generated data
- * at any real scale yet), not something to reach for on a large table.
+ * Used to be `ORDER BY RANDOM() LIMIT 1` — a full-table scan, since SQLite
+ * has to compute and sort a random key for every matching row before
+ * picking the top one. Now reads the edge-cached approved-facts list
+ * (`getApprovedFactsCached`, below) and picks randomly in Worker code
+ * instead: on a cache hit (the common case, within the 5-minute TTL) this
+ * costs zero D1 reads at all, and even on a cache miss it's one unsorted
+ * scan rather than a sorted one. The tradeoff is the same staleness the
+ * count badge already accepts — a fact approved or unapproved in the last
+ * 5 minutes might not be reflected yet — which is fine for a
+ * curated/occasionally-updated list.
  */
 export async function getRandomFact(db: D1Database): Promise<FactRow | null> {
-  const row = await db
-    .prepare('SELECT id, fact, usefulness FROM facts WHERE approved = TRUE ORDER BY RANDOM() LIMIT 1')
-    .first<FactRow>();
-  return row ?? null;
+  const facts = await getApprovedFactsCached(db);
+  if (facts.length === 0) return null;
+  return facts[Math.floor(Math.random() * facts.length)];
 }
 
 /** Longest `fact` string POST /fact will accept — see routes/api.ts. */
@@ -44,8 +50,12 @@ export async function getApprovedFactCount(db: D1Database): Promise<number> {
   return row?.count ?? 0;
 }
 
+// Shared TTL for both edge caches below (the count and the full approved-facts
+// list) — same staleness tradeoff, so one constant rather than two identical
+// ones.
+const APPROVED_FACTS_CACHE_TTL_SECONDS = 300;
+
 const FACT_COUNT_CACHE_KEY = new Request('https://internal.uiaas/cache/approved-fact-count');
-const FACT_COUNT_CACHE_TTL_SECONDS = 300;
 
 /**
  * `getApprovedFactCount`, cached at Cloudflare's edge via the Workers Cache
@@ -70,10 +80,40 @@ export async function getApprovedFactCountCached(db: D1Database): Promise<number
   await cache.put(
     FACT_COUNT_CACHE_KEY,
     new Response(JSON.stringify({ count }), {
-      headers: { 'Cache-Control': `max-age=${FACT_COUNT_CACHE_TTL_SECONDS}`, 'Content-Type': 'application/json' },
+      headers: { 'Cache-Control': `max-age=${APPROVED_FACTS_CACHE_TTL_SECONDS}`, 'Content-Type': 'application/json' },
     }),
   );
   return count;
+}
+
+const APPROVED_FACTS_CACHE_KEY = new Request('https://internal.uiaas/cache/approved-facts');
+
+/**
+ * Every approved row from `facts`, cached at Cloudflare's edge via the same
+ * `caches.default` pattern as `getApprovedFactCountCached` above (same TTL,
+ * same synthetic internal cache key style, same inline-await-on-miss
+ * tradeoff — no extra binding needed for either). `getRandomFact` reads
+ * this cached list and picks a random entry in Worker code rather than
+ * asking D1 to do it — see `getRandomFact`'s own doc comment for why.
+ * Exported (not just used internally) so it's independently testable the
+ * same way the count cache is, per this project's "verify the caching
+ * genuinely works" convention.
+ */
+export async function getApprovedFactsCached(db: D1Database): Promise<FactRow[]> {
+  const cache = caches.default;
+  const cached = await cache.match(APPROVED_FACTS_CACHE_KEY);
+  if (cached) {
+    return cached.json<FactRow[]>();
+  }
+
+  const { results } = await db.prepare('SELECT id, fact, usefulness FROM facts WHERE approved = TRUE').all<FactRow>();
+  await cache.put(
+    APPROVED_FACTS_CACHE_KEY,
+    new Response(JSON.stringify(results), {
+      headers: { 'Cache-Control': `max-age=${APPROVED_FACTS_CACHE_TTL_SECONDS}`, 'Content-Type': 'application/json' },
+    }),
+  );
+  return results;
 }
 
 /** Formats a fact's row id as the public-facing `uiaas_00042`-style id. */
