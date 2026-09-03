@@ -75,7 +75,6 @@ function Hero() {
         <span class="status-dot" />
         ALL SYSTEMS OPERATIONAL
       </span>
-      <p class="tagline">Providing useless information since 2026.</p>
       <h1 class="headline">What don&rsquo;t you need to know today?</h1>
       <p class="sub-hero">Enterprise-grade nonsense, delivered instantly.</p>
       <div class="hero-actions">
@@ -163,6 +162,7 @@ function Footer() {
   return (
     <footer class="site">
       <div class="wrap">
+        <p class="tagline">Providing useless information since 2026.</p>
         <p>Trusted by absolutely no one.</p>
         <div class="beg-footer">
           <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
