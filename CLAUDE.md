@@ -304,13 +304,24 @@ knowing before touching test setup:
 
 `.github/workflows/ci.yml` — a `test` job (`npm run cf-typegen && npm run
 typecheck && npm test`) on every push and PR against `master`, plus, only
-for a push to `master` that passes `test`, a `deploy` job running `wrangler
-deploy` directly (unlike the sibling `wild-swimmer-app` repo's CI, which
-deploys by dispatching a workflow in a separate site repo — `uiaas` deploys
-itself, there's no separate site repo to hand off to). `cf-typegen` is a
-CI-only step here (see "Platform config" below on why `worker-configuration.d.ts`
-is never committed) — it doesn't run in the `deploy` job, since `wrangler
-deploy` bundles with esbuild and never runs `tsc` itself.
+for a push to `master` that passes `test`, a `deploy` job running `npm run
+db:migrate:remote` then `wrangler deploy` directly (unlike the sibling
+`wild-swimmer-app` repo's CI, which deploys by dispatching a workflow in a
+separate site repo — `uiaas` deploys itself, there's no separate site repo
+to hand off to). `cf-typegen` is a CI-only step here (see "Platform config"
+below on why `worker-configuration.d.ts` is never committed) — it doesn't
+run in the `deploy` job, since `wrangler deploy` bundles with esbuild and
+never runs `tsc` itself.
+
+**`db:migrate:remote` runs on every deploy; `db:seed:remote` never does.**
+`wrangler d1 migrations apply` is idempotent — it only applies migrations
+not already recorded as run — so it's safe unconditionally. `seed.sql`
+isn't: re-running it duplicates rows (see "Facts data (D1)" above), so
+seeding stays a manual, one-time step, never wired into CI. Confirmed
+`wrangler d1 migrations apply --remote` skips its interactive confirmation
+prompt automatically in a non-interactive/CI context (its own `--help`
+documents this — still takes a backup first either way) — no extra flag
+needed to make this safe to run unattended.
 
 Needs two repo secrets to actually deploy: `CLOUDFLARE_API_TOKEN` (scoped to
 this account, "Workers Scripts: Edit" at minimum) and `CLOUDFLARE_ACCOUNT_ID`.
