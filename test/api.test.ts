@@ -193,6 +193,28 @@ describe('GET /', () => {
     expect(html).toContain('What don’t you need to know today?');
     expect(html).toContain('Providing useless information since 2026.');
   });
+
+  it('carries SEO/social tags pointing at the real production origin', async () => {
+    const res = await workerExports.default.fetch(new Request('https://example.com/'));
+    const html = await res.text();
+
+    expect(html).toContain('<link rel="canonical" href="https://uiaas.becker-consulting.se"/>');
+    expect(html).toContain('<meta property="og:image" content="https://uiaas.becker-consulting.se/og-image.svg"/>');
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image"/>');
+    expect(html).toContain('"@type":"WebSite"');
+  });
+});
+
+describe('GET /og-image.svg', () => {
+  it('serves the social-preview image referenced by the landing page', async () => {
+    const res = await workerExports.default.fetch(new Request('https://example.com/og-image.svg'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('image/svg+xml');
+
+    const svg = await res.text();
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('width="1200" height="630"');
+  });
 });
 
 describe('API docs', () => {
