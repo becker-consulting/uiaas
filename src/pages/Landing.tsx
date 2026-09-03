@@ -212,7 +212,7 @@ export function Landing() {
             </a>
             <div class="nav-links">
               <a href="#pricing">Pricing</a>
-              <a href="/api/v1/fact">API</a>
+              <a href="/docs">API</a>
               <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
                 Sponsor an Endpoint
               </a>

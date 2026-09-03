@@ -99,6 +99,16 @@ reason, ask first, the same way merging into `master` itself needs asking.
   response itself never includes the underlying error. Route logic still
   belongs in `routes/`, not here; this is the one thing that's genuinely
   app-wide.
+- **API docs are real, not decorative.** `src/lib/openapi.ts` is a
+  hand-written OpenAPI 3.0 document (no `@hono/zod-openapi` or similar —
+  there's exactly one endpoint, generating the spec from route definitions
+  would be solving a problem this app doesn't have), served as JSON at
+  `GET /api/v1/openapi.json` (`routes/api.ts`) and rendered via
+  `@hono/swagger-ui` at `/docs` (`src/index.tsx` — the nav's "API" link
+  points here, not at the raw endpoint). "Try it out" in the Swagger UI
+  hits the real live endpoint. Keep `openapi.ts` in sync by hand whenever
+  `routes/api.ts`'s response shape changes — nothing enforces that
+  automatically at this scale.
 - Every pricing tier (Free/Pro/Enterprise) hits the **exact same** endpoint and
   handler — the pricing page is cosmetic. Don't add real tier-gating to
   `routes/api.ts` unless explicitly asked to build that as a real feature (at
