@@ -122,6 +122,12 @@ generated from history without rewriting it first:
 
 Same `type`s name each short-lived branch — see [CLAUDE.md](CLAUDE.md#branching).
 
+The merge commit that lands a branch on `master` follows the same format too
+— `git merge --no-ff` drops in a bare "Merge \<branch\> into master" by
+default, but that gets typed over with a real `<type>: <Summary>` (usually
+`chore:`, since the merge itself isn't the user-facing change — that already
+happened in the branch's own commits) before it's kept.
+
 ## Project layout
 
 ```
