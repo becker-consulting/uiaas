@@ -125,7 +125,7 @@ test/                 — vitest, runs inside the Workers runtime
 (typecheck + test on every push/PR, deploy on a passing push to `master`) once
 this has a GitHub remote worth protecting.
 
-## Beg for money
+## Sponsor an Endpoint
 
 The button links to `https://buymeacoffee.com/handiman`, set via
 `BUY_ME_A_COFFEE_HANDLE` in [src/config.ts](src/config.ts) — every place the

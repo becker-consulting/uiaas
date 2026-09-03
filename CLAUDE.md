@@ -22,9 +22,9 @@ background with a subtle grid texture, a violet brand glow behind the hero,
 `Space Grotesk` for display type + `Inter` for body (loaded from Google
 Fonts in `Landing.tsx`'s `<head>` — a real font CDN load for a real deployed
 site, not the Artifact-tool CDN allowlist some other Claude Code contexts
-apply, which doesn't govern this repo at all), gold for the "Beg for money"
-CTA specifically so it reads as the odd one out against the violet primary
-buttons. Status-page furniture ("● ALL SYSTEMS OPERATIONAL" above the hero)
+apply, which doesn't govern this repo at all), gold for the "Sponsor an
+Endpoint" CTA specifically so it reads as the odd one out against the
+violet primary buttons. Status-page furniture ("● ALL SYSTEMS OPERATIONAL" above the hero)
 and monospace `$`-figure pricing lean into "taking itself too seriously" —
 extend that vocabulary for new sections rather than introducing a different
 one.
@@ -110,7 +110,7 @@ reason, ask first, the same way merging into `master` itself needs asking.
   sketch" section. That's a joke, not an oversight; don't "fix" it by adding
   real rate limiting without being asked.
 - `src/config.ts`'s `BUY_ME_A_COFFEE_HANDLE` (`handiman`) is the single
-  source for the "Beg for money" button's link — every place the button
+  source for the "Sponsor an Endpoint" button's link — every place the button
   appears reads `BUY_ME_A_COFFEE_URL` from that one file; don't hardcode a
   buymeacoffee.com link anywhere else.
 - **`COMPANY_NAME`/`COMPANY_URL`/`COMPANY_LOCATION` in `src/config.ts` are

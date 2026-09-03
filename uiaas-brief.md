@@ -10,7 +10,7 @@ The joke only works if the execution is sincere. No wink emoji, no "lol just kid
 
 - **Hero headline:** "What don't you need to know today?"
 - **Mission / tagline:** "Providing useless information since 2026."
-- **Signature feature:** a "Beg for money" button, prominently placed (donation link — provider TBD, see Open Decisions).
+- **Signature feature:** a "Sponsor an Endpoint" button, prominently placed (donation link, now wired up to Buy Me a Coffee — see `src/config.ts`). Originally called "Beg for money" — renamed once actually built, same idea: a blunt/euphemistic donation ask given equal top billing next to real enterprise-SaaS copy.
 
 ## Optional supporting copy (offered, not yet locked in — feel free to use, drop, or riff on these)
 
@@ -21,9 +21,9 @@ The joke only works if the execution is sincere. No wink emoji, no "lol just kid
 ## Core features (MVP)
 
 1. **Fact API** — a single endpoint that returns one random useless fact as JSON (e.g. `GET /api/fact`).
-2. **Landing page** — hero section (headline + tagline), a short mission blurb, a pricing section, and the beg-for-money button.
+2. **Landing page** — hero section (headline + tagline), a short mission blurb, a pricing section, and the "Sponsor an Endpoint" button.
 3. **Pricing tiers** — Free / Pro / Enterprise, cosmetically different (price, badge, maybe a fake "SLA"), functionally identical — all three hit the same endpoint.
-4. **Beg for money button** — visually prominent, links out to a donation provider.
+4. **"Sponsor an Endpoint" button** — visually prominent, links out to a donation provider.
 
 ## API sketch (straw-man — adjust freely)
 

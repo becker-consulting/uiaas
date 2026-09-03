@@ -82,7 +82,7 @@ function Hero() {
           Get Started Free
         </a>
         <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-          Beg for money
+          Sponsor an Endpoint
         </a>
       </div>
     </header>
@@ -166,7 +166,7 @@ function Footer() {
         <p>Trusted by absolutely no one.</p>
         <div class="beg-footer">
           <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-            Beg for money
+            Sponsor an Endpoint
           </a>
         </div>
         <p>
@@ -214,7 +214,7 @@ export function Landing() {
               <a href="#pricing">Pricing</a>
               <a href="/api/v1/fact">API</a>
               <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-                Beg for money
+                Sponsor an Endpoint
               </a>
             </div>
           </div>

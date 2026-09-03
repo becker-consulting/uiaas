@@ -121,6 +121,7 @@ nav.site .wrap {
   text-decoration: none;
   border: 1px solid transparent;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 .btn:hover { transform: translateY(-1px); }
@@ -365,4 +366,13 @@ footer.site .beg-footer { margin: 18px 0; }
   text-decoration: none;
 }
 .built-by a:hover { color: var(--brand-bright); }
+
+/* Nav has four items (logo, Pricing, API, the CTA button) fighting for one
+   row — "Sponsor an Endpoint" is long enough that something has to give
+   before the CTA does. Secondary text links go first; the wordmark and the
+   CTA are what actually matter at this width. */
+@media (max-width: 480px) {
+  .nav-links { gap: 12px; }
+  .nav-links a:not(.btn) { display: none; }
+}
 `;

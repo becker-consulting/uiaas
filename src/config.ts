@@ -1,5 +1,5 @@
 /**
- * Buy Me a Coffee handle for the "Beg for money" button — buymeacoffee.com/<handle>.
+ * Buy Me a Coffee handle for the "Sponsor an Endpoint" button — buymeacoffee.com/<handle>.
  * Everything that needs to link to it reads from here, so that's the only
  * place that needs to change if it's ever renamed.
  */
