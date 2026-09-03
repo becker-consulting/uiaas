@@ -1,8 +1,13 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { getRandomFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
+import { openApiSpec } from '../lib/openapi';
 
 export const api = new Hono<{ Bindings: Env }>();
+
+// GET /api/v1/openapi.json — backs the Swagger UI served at /docs
+// (src/index.tsx), which is what the nav's "API" link points to.
+api.get('/openapi.json', (c) => c.json(openApiSpec));
 
 // GET /api/v1/fact — the entire product. Free, Pro and Enterprise all hit
 // this exact same handler (see the landing page's pricing section) —

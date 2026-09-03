@@ -83,3 +83,23 @@ describe('GET /', () => {
     expect(html).toContain('Providing useless information since 2026.');
   });
 });
+
+describe('API docs', () => {
+  it('serves the OpenAPI spec describing GET /fact', async () => {
+    const res = await workerExports.default.fetch(new Request('https://example.com/api/v1/openapi.json'));
+    expect(res.status).toBe(200);
+
+    const spec = await res.json<{ openapi: string; paths: Record<string, unknown> }>();
+    expect(spec.openapi).toBe('3.0.3');
+    expect(spec.paths).toHaveProperty('/fact');
+  });
+
+  it('serves Swagger UI at /docs, pointed at the real spec', async () => {
+    const res = await workerExports.default.fetch(new Request('https://example.com/docs'));
+    expect(res.status).toBe(200);
+
+    const html = await res.text();
+    expect(html).toContain('swagger-ui');
+    expect(html).toContain('/api/v1/openapi.json');
+  });
+});

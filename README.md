@@ -22,6 +22,9 @@ returns random, entirely useless facts. Everything else (pricing tiers, an
 `usefulness` is the Negative Usefulness Index™ — always zero or lower (a D1
 `CHECK` constraint enforces it), scored per fact in `seed.sql`.
 
+Full interactive API docs (Swagger UI, generated from a real OpenAPI 3.0
+spec — "Try it out" hits the actual live endpoint) are at `/docs`.
+
 ## Stack
 
 - [Hono](https://hono.dev/) + TypeScript, deployed as a single Cloudflare Worker.
@@ -106,12 +109,13 @@ Same `type`s name each short-lived branch — see [CLAUDE.md](CLAUDE.md#branchin
 
 ```
 src/
-  index.tsx        — Hono app entry: mounts the API and the landing page
-  routes/api.ts     — GET /api/v1/fact
+  index.tsx        — Hono app entry: mounts the API, the landing page, /docs
+  routes/api.ts     — GET /api/v1/fact, GET /api/v1/openapi.json
   pages/Landing.tsx — the whole landing page (hero, pricing, demo, footer)
   pages/styles.ts   — inlined CSS for the landing page
   lib/facts.ts      — D1 query for a random fact
-  config.ts         — Buy Me a Coffee handle (placeholder until an account exists)
+  lib/openapi.ts    — hand-written OpenAPI 3.0 spec, backs Swagger UI at /docs
+  config.ts         — Buy Me a Coffee handle + the real Becker Solutions credit
   types.ts          — Env (bindings) type
 migrations/          — D1 schema migrations (npm run db:migrate:*)
 seed.sql              — curated starter facts, loaded separately from migrations
@@ -125,7 +129,7 @@ test/                 — vitest, runs inside the Workers runtime
 (typecheck + test on every push/PR, deploy on a passing push to `master`) once
 this has a GitHub remote worth protecting.
 
-## Beg for money
+## Sponsor an Endpoint
 
 The button links to `https://buymeacoffee.com/handiman`, set via
 `BUY_ME_A_COFFEE_HANDLE` in [src/config.ts](src/config.ts) — every place the

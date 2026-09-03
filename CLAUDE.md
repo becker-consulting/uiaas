@@ -13,6 +13,33 @@ the brief as a starting sketch. The tone throughout is **deadpan**: the app
 takes itself exactly as seriously as a real SaaS would. No wink emoji, no
 "lol jk" anywhere in copy or comments that face the reader.
 
+## Look and feel
+
+Dark, self-serious enterprise SaaS — a deliberate single look, not a
+light/dark toggle (`src/pages/styles.ts`'s `:root` sets `color-scheme: dark`
+unconditionally; there's no light-mode block to keep in sync). Deep-black
+background with a subtle grid texture, a violet brand glow behind the hero,
+`Space Grotesk` for display type + `Inter` for body (loaded from Google
+Fonts in `Landing.tsx`'s `<head>` — a real font CDN load for a real deployed
+site, not the Artifact-tool CDN allowlist some other Claude Code contexts
+apply, which doesn't govern this repo at all), gold for the "Sponsor an
+Endpoint" CTA specifically so it reads as the odd one out against the
+violet primary buttons. Status-page furniture ("● ALL SYSTEMS OPERATIONAL" above the hero)
+and monospace `$`-figure pricing lean into "taking itself too seriously" —
+extend that vocabulary for new sections rather than introducing a different
+one.
+
+**`UIaaS` set in one weight visually collapses to "UlaaS"** — both loaded
+fonts render a plain sans-serif capital I indistinguishably from a lowercase
+l next to "aaS", so the brand name reads wrong at a glance. Fixed two ways,
+both in `Landing.tsx`: the nav wordmark wraps "UI" in `.logo-mark` (a solid
+badge — unambiguous since it's not relying on the glyph at all), and the
+`Brand` component (`<Brand />`) gives "UI" alone `.brand-ui`'s color+weight
+wherever the name appears in running body text (Mission blurb, footer
+copyright). Use `<Brand />` for any new visible "UIaaS" occurrence instead of
+typing the plain string — a `<title>`/`<meta>` value is the one exception,
+since those never render as on-page glyphs and don't hit this at all.
+
 ## Commands
 
 See "Commands" and "Setup" in [README.md](README.md) for the full list.
@@ -72,6 +99,16 @@ reason, ask first, the same way merging into `master` itself needs asking.
   response itself never includes the underlying error. Route logic still
   belongs in `routes/`, not here; this is the one thing that's genuinely
   app-wide.
+- **API docs are real, not decorative.** `src/lib/openapi.ts` is a
+  hand-written OpenAPI 3.0 document (no `@hono/zod-openapi` or similar —
+  there's exactly one endpoint, generating the spec from route definitions
+  would be solving a problem this app doesn't have), served as JSON at
+  `GET /api/v1/openapi.json` (`routes/api.ts`) and rendered via
+  `@hono/swagger-ui` at `/docs` (`src/index.tsx` — the nav's "API" link
+  points here, not at the raw endpoint). "Try it out" in the Swagger UI
+  hits the real live endpoint. Keep `openapi.ts` in sync by hand whenever
+  `routes/api.ts`'s response shape changes — nothing enforces that
+  automatically at this scale.
 - Every pricing tier (Free/Pro/Enterprise) hits the **exact same** endpoint and
   handler — the pricing page is cosmetic. Don't add real tier-gating to
   `routes/api.ts` unless explicitly asked to build that as a real feature (at
@@ -83,9 +120,19 @@ reason, ask first, the same way merging into `master` itself needs asking.
   sketch" section. That's a joke, not an oversight; don't "fix" it by adding
   real rate limiting without being asked.
 - `src/config.ts`'s `BUY_ME_A_COFFEE_HANDLE` (`handiman`) is the single
-  source for the "Beg for money" button's link — every place the button
+  source for the "Sponsor an Endpoint" button's link — every place the button
   appears reads `BUY_ME_A_COFFEE_URL` from that one file; don't hardcode a
   buymeacoffee.com link anywhere else.
+- **`COMPANY_NAME`/`COMPANY_URL`/`COMPANY_LOCATION` in `src/config.ts` are
+  the one genuinely real thing on the page** — a "Built by Becker Solutions
+  (Sweden)" credit in the footer (`.built-by` in `styles.ts`), deliberately
+  styled distinctly from the in-character `© 2026 UIaaS...` line above it
+  (its own divider, muted rather than brand-colored) so it doesn't read as
+  part of the joke. `COMPANY_LOCATION` disambiguates from an unrelated
+  "Becker Solutions" elsewhere (Germany) — keep it even if the wording
+  around it changes. This project is meant to be shown off (CV, LinkedIn) —
+  don't fold this credit
+  into the parody copy or remove it without being asked.
 
 ## Facts data (D1)
 

@@ -17,6 +17,7 @@
     "db:seed:remote": "wrangler d1 execute uiaas-db --remote --file=./seed.sql"
   },
   "dependencies": {
+    "@hono/swagger-ui": "^0.6.1",
     "hono": "^4.13.5"
   },
   "devDependencies": {
