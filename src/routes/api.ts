@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { getRandomFact, toPublicFactId } from '../lib/facts';
+import { getRandomFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
 
 export const api = new Hono<{ Bindings: Env }>();
 
@@ -21,7 +21,8 @@ api.get('/fact', async (c) => {
 
   return c.json({
     fact: row.fact,
-    usefulness: 0,
+    usefulness: row.usefulness,
+    uselessness_label: uselessnessLabel(row.usefulness),
     id: toPublicFactId(row.id),
     tier_required: 'any',
   });

@@ -82,13 +82,31 @@ reason, ask first, the same way merging into `master` itself needs asking.
 
 ## Facts data (D1)
 
-- `migrations/` is the schema (currently just the one `facts` table:
-  `id`, `fact`, `usefulness` — the last always `0`, per the entire product's
-  premise). `seed.sql` is curated starter content, loaded **separately** from
-  migrations (`npm run db:seed:local`/`db:seed:remote`) — it's data, not
-  schema, so it doesn't get a migration file of its own. Re-running it against
-  a non-empty table duplicates rows; clear the table first if that's not
-  wanted.
+- `migrations/` is the schema (currently just the one `facts` table: `id`,
+  `fact`, `usefulness`). `seed.sql` is curated starter content, loaded
+  **separately** from migrations (`npm run db:seed:local`/`db:seed:remote`)
+  — it's data, not schema, so it doesn't get a migration file of its own.
+  Re-running it against a non-empty table duplicates rows; clear the table
+  first if that's not wanted.
+- **`usefulness` is the Negative Usefulness Index™** — zero or lower, enforced
+  by a `CHECK (usefulness <= 0)` constraint on the column (0 is the *best* a
+  fact can score: perfectly useless, as advertised). `uselessnessLabel()` in
+  `src/lib/facts.ts` buckets a score into a human label by threshold (`<= -5`,
+  `<= -3`, `<= -1`, else `0`) — see its doc comment for the exact copy, which
+  the API response's `uselessness_label` field and `seed.sql`'s own comments
+  both reuse. Score new facts using that same four-tier scale for consistency,
+  not an arbitrary negative number.
+- `migrations/0001_create_facts_table.sql` had the `CHECK` constraint added
+  directly to it (not a new `0002` migration) — at the time, `wrangler d1
+  migrations list uiaas-db --remote` confirmed 0001 had never actually been
+  applied to the real D1 database, so there was no shipped state to preserve.
+  **That reasoning doesn't carry forward**: the next schema change, once 0001
+  has genuinely been applied somewhere, needs its own new migration file —
+  same "don't rewrite what's already shipped" principle as the branching
+  section's rule against rebasing pushed branches, just for D1 instead of git.
+  If unsure whether 0001 has been applied remotely, check with that same
+  `wrangler d1 migrations list uiaas-db --remote` command rather than assuming
+  either way.
 - The plan (per the brief and how this was scoped when scaffolded) is to grow
   the fact list beyond the ~15-row seed later — either more curated rows or a
   one-off fetch from an external source, loaded the same way `seed.sql` is,
@@ -98,6 +116,11 @@ reason, ask first, the same way merging into `master` itself needs asking.
   large (thousands+) rows.
 - `toPublicFactId` in the same file formats the row's autoincrement `id` as
   the public `uiaas_00042`-style id — the public id is derived, not stored.
+- **The "Enterprise has a higher average Negative Usefulness Index than
+  Free" line on the pricing card is copy only** (`src/pages/Landing.tsx`,
+  `PRICING_TIERS`) — there's no actual per-tier scoring behind it, matching
+  "every tier hits the exact same endpoint" above. Don't wire up real
+  tier-aware fact selection to make that claim literally true unless asked.
 
 ## Testing
 
