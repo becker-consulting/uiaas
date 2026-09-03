@@ -47,7 +47,12 @@ const PRICING_TIERS = [
     period: '',
     badge: null,
     sla: '99.99% uptime for information you didn’t need.',
-    features: ['Everything in Pro', 'Custom SLA', 'A named account executive who begs for money too'],
+    features: [
+      'Everything in Pro',
+      'Custom SLA',
+      'A named account executive who begs for money too',
+      'Higher average Negative Usefulness Index than Free',
+    ],
   },
 ] as const;
 
@@ -88,7 +93,7 @@ function Demo() {
       <div class="wrap">
         <div class="demo-card">
           <h2>See it in action</h2>
-          <p>One click. One fact. Zero value.</p>
+          <p>One click. One fact. One Negative Usefulness Index&trade; score.</p>
           <button id="try-it-btn" class="btn btn-primary" type="button">
             Get a useless fact
           </button>
@@ -126,7 +131,11 @@ function Pricing() {
             </div>
           ))}
         </div>
-        <p style="margin-top: 24px; font-size: 0.8rem; color: var(--text-muted);">
+        <p style="margin-top: 32px; font-weight: 600;">
+          Every fact ships scored on our proprietary Negative Usefulness Index&trade; &mdash; the only metric in tech
+          that goes down when the product improves.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
           *Rate limit is advertised, not enforced. We&rsquo;re not going to check.
         </p>
       </div>

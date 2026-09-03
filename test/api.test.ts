@@ -1,5 +1,6 @@
 import { env, exports as workerExports } from 'cloudflare:workers';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { uselessnessLabel } from '../src/lib/facts';
 // `?raw` inlines the migration's SQL as a string at build time, so setting
 // up the test database needs no runtime filesystem access (unavailable
 // inside the Workers runtime these tests execute in) — see
@@ -20,10 +21,17 @@ describe('GET /api/v1/fact', () => {
     const res = await workerExports.default.fetch(new Request('https://example.com/api/v1/fact'));
     expect(res.status).toBe(200);
 
-    const body = await res.json<{ fact: string; usefulness: number; id: string; tier_required: string }>();
+    const body = await res.json<{
+      fact: string;
+      usefulness: number;
+      uselessness_label: string;
+      id: string;
+      tier_required: string;
+    }>();
     expect(typeof body.fact).toBe('string');
     expect(body.fact.length).toBeGreaterThan(0);
     expect(body.usefulness).toBe(0);
+    expect(body.uselessness_label).toBe('Perfectly useless, as advertised.');
     expect(body.id).toMatch(/^uiaas_\d{5}$/);
     expect(body.tier_required).toBe('any');
   });
@@ -36,6 +44,33 @@ describe('GET /api/v1/fact', () => {
       expect(res.status).toBe(200);
       expect(res.headers.get('X-RateLimit-Limit')).toBe('3');
     }
+  });
+});
+
+describe('Negative Usefulness Index™', () => {
+  it('rejects a fact with a positive usefulness score', async () => {
+    await expect(
+      env.DB.prepare('INSERT INTO facts (fact, usefulness) VALUES (?, ?)').bind('This fact is, regrettably, useful.', 1).run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+  });
+
+  it('accepts zero and negative scores', async () => {
+    const result = await env.DB.prepare('INSERT INTO facts (fact, usefulness) VALUES (?, ?)')
+      .bind('This fact is exactly as useless as it needs to be.', -5)
+      .run();
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    [0, 'Perfectly useless, as advertised.'],
+    [-1, 'You will bring this up at a dinner party and regret it.'],
+    [-2, 'You will bring this up at a dinner party and regret it.'],
+    [-3, 'This fact will replace something useful you used to know.'],
+    [-4, 'This fact will replace something useful you used to know.'],
+    [-5, 'Legally you cannot un-know this.'],
+    [-100, 'Legally you cannot un-know this.'],
+  ])('labels a score of %i as %j', (score, label) => {
+    expect(uselessnessLabel(score)).toBe(label);
   });
 });
 

@@ -11,12 +11,16 @@ returns random, entirely useless facts. Everything else (pricing tiers, an
 
 ```json
 {
-  "fact": "Honey never spoils — edible honey has been found in 3,000-year-old Egyptian tombs.",
-  "usefulness": 0,
-  "id": "uiaas_00003",
+  "fact": "The inventor of the frisbee was turned into a frisbee after he died — his ashes were molded into memorial discs.",
+  "usefulness": -5,
+  "uselessness_label": "Legally you cannot un-know this.",
+  "id": "uiaas_00015",
   "tier_required": "any"
 }
 ```
+
+`usefulness` is the Negative Usefulness Index™ — always zero or lower (a D1
+`CHECK` constraint enforces it), scored per fact in `seed.sql`.
 
 ## Stack
 
