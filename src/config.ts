@@ -15,3 +15,6 @@ export const BUY_ME_A_COFFEE_URL = `https://buymeacoffee.com/${BUY_ME_A_COFFEE_H
  */
 export const COMPANY_NAME = 'Becker Solutions';
 export const COMPANY_URL = 'https://www.henrikbecker.net';
+// There's at least one other "Becker Solutions" out there (Germany) —
+// disambiguated in the footer credit so it's clearly not that one.
+export const COMPANY_LOCATION = 'Sweden';
