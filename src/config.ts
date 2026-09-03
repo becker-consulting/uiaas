@@ -18,3 +18,14 @@ export const COMPANY_URL = 'https://www.henrikbecker.net';
 // There's at least one other "Becker Solutions" out there (Germany) —
 // disambiguated in the footer credit so it's clearly not that one.
 export const COMPANY_LOCATION = 'Sweden';
+
+/**
+ * The real production origin — single source of truth for every
+ * absolute-URL SEO tag (canonical, og:url, og:image, twitter:image) in
+ * Landing.tsx. Those need to be absolute (a relative URL doesn't work for
+ * a social-preview crawler fetching og:image as its own HTTP request), and
+ * this app is reachable at both this custom domain and *.workers.dev — this
+ * is the one wrangler.jsonc's routes declares canonical, so it's the one
+ * used here too.
+ */
+export const SITE_URL = 'https://uiaas.becker-consulting.se';

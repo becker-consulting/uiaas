@@ -42,6 +42,40 @@ better than two independent fixes.) Use `<Brand />` for any new visible
 value is the one exception, since those never render as on-page glyphs and
 don't hit this at all.
 
+## SEO / social preview
+
+This project is meant to be shown off (CV, LinkedIn), so `Landing.tsx`'s
+`<head>` carries real Open Graph + Twitter Card tags, a canonical link, and
+a minimal `WebSite` JSON-LD block — not just a `<title>`/`<meta
+name="description">` and calling it done.
+
+- **`SITE_URL` in `src/config.ts`** is the one place the production origin
+  is written down — every absolute-URL tag (canonical, `og:url`,
+  `og:image`, `twitter:image`) reads from it. Matters because those tags
+  need to be absolute (a social crawler fetches `og:image` as its own HTTP
+  request — a relative URL doesn't resolve for it) and this Worker answers
+  at both the `uiaas.becker-consulting.se` custom domain and its
+  `*.workers.dev` URL — `SITE_URL` is the one `wrangler.jsonc`'s `routes`
+  declares canonical, so it's the one used here too. Update both together
+  if the domain ever changes.
+- **`GET /og-image.svg`** (`src/index.tsx`, built in `src/pages/ogImage.ts`)
+  is what `og:image`/`twitter:image` actually point at — a 1200×630 card in
+  the site's own dark/violet-glow look, not a generic placeholder. Hand-
+  written SVG, not a screenshot or a PNG pipeline: system sans-serif rather
+  than the site's own Space Grotesk/Inter, since a social crawler
+  rasterizes it without fetching Google Fonts, so designing for the
+  fallback directly beats assuming a web font renders. Served with
+  `Cache-Control: public, max-age=3600` since it's static output, same
+  bytes every request. SVG (not PNG) is a deliberate tradeoff, not an
+  oversight: current LinkedIn/Slack/Discord render it fine; X/Twitter's
+  crawler has historically been pickier about non-raster preview images —
+  if a Twitter Card ever needs pixel-perfect fidelity, rasterizing this
+  (e.g. via `resvg-wasm`) is the next step, not a rewrite.
+- Keep `PAGE_TITLE`/`PAGE_DESCRIPTION` (top of `Landing.tsx`) as the single
+  source both the plain `<meta name="description">` and every OG/Twitter
+  variant reuse — don't let the social-preview copy drift from the page's
+  own.
+
 ## Commands
 
 See "Commands" and "Setup" in [README.md](README.md) for the full list.

@@ -1,6 +1,24 @@
 import { css } from './styles';
 import { faviconHref } from './favicon';
-import { BUY_ME_A_COFFEE_URL, COMPANY_LOCATION, COMPANY_NAME, COMPANY_URL } from '../config';
+import { BUY_ME_A_COFFEE_URL, COMPANY_LOCATION, COMPANY_NAME, COMPANY_URL, SITE_URL } from '../config';
+
+const PAGE_TITLE = 'UIaaS — Useless Information as a Service';
+const PAGE_DESCRIPTION =
+  'Enterprise-grade nonsense, delivered instantly. UIaaS provides random, entirely useless facts via a versioned API.';
+const OG_IMAGE_URL = `${SITE_URL}/og-image.svg`;
+
+// Minimal WebSite structured data — this is a portfolio piece meant to be
+// found and shown off, not a data-heavy product with much else worth
+// marking up (no Product/Organization schema: there's nothing for sale,
+// and the "organization" behind it is already the real, separate
+// COMPANY_* credit in the footer, not UIaaS itself).
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'UIaaS',
+  url: SITE_URL,
+  description: PAGE_DESCRIPTION,
+};
 
 // Client-side only: hits the live API and renders the response. Inlined as
 // a string (not a separate asset) for the same one-page-site reason as
@@ -191,13 +209,32 @@ export function Landing() {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>UIaaS — Useless Information as a Service</title>
-        <meta
-          name="description"
-          content="Enterprise-grade nonsense, delivered instantly. UIaaS provides random, entirely useless facts via a versioned API."
-        />
+        <title>{PAGE_TITLE}</title>
+        <meta name="description" content={PAGE_DESCRIPTION} />
+        <meta name="author" content={COMPANY_NAME} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={SITE_URL} />
         <meta name="theme-color" content="#08080c" />
         <link rel="icon" type="image/svg+xml" href={faviconHref} />
+
+        {/* Open Graph — this page is meant to be shared (CV, LinkedIn), so
+            what the link preview looks like actually matters. */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="UIaaS" />
+        <meta property="og:title" content={PAGE_TITLE} />
+        <meta property="og:description" content={PAGE_DESCRIPTION} />
+        <meta property="og:url" content={SITE_URL} />
+        <meta property="og:image" content={OG_IMAGE_URL} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="en_US" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={PAGE_TITLE} />
+        <meta name="twitter:description" content={PAGE_DESCRIPTION} />
+        <meta name="twitter:image" content={OG_IMAGE_URL} />
+
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
