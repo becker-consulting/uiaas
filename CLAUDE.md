@@ -150,10 +150,23 @@ reason, ask first, the same way merging into `master` itself needs asking.
   to do the same, or the row will silently never show up. `POST /fact`
   (`routes/api.ts`, `submitFact` in `lib/facts.ts`) is the only other way a
   row gets created, and it's open to anyone with no authentication — the
-  unapproved-by-default gate is the actual defense against that being an
-  unauthenticated public write endpoint with no rate limiting, not
-  something layered on top of it. There's no admin UI to actually approve a
-  submission yet — that's direct DB access (`wrangler d1 execute`) for now.
+  unapproved-by-default gate is what stops a flood from ever reaching a
+  reader. There's no admin UI to actually approve a submission yet — that's
+  direct DB access (`wrangler d1 execute`) for now.
+- **`POST /fact` is also rate-limited for real** — `SUBMIT_RATE_LIMITER` in
+  `wrangler.jsonc` is a native Workers rate-limit binding (`ratelimits`,
+  `simple: { limit: 5, period: 60 }`), keyed on `CF-Connecting-IP` in
+  `routes/api.ts`. This is a second, independent layer from the moderation
+  gate above, not the same protection twice — moderation stops a flood from
+  becoming visible, the rate limit stops it from being written at all. It's
+  real (returns 429 + `Retry-After`), unlike the free tier's advertised-only
+  headers on `GET /fact` — don't confuse the two or assume this one is a
+  joke too. The binding's `period` is fixed by the platform to 10 or 60
+  seconds (burst protection, not a "N per day" quota) and needs no zone or
+  custom domain — it works on the `*.workers.dev` deployment too. Verified
+  in `test/api.test.ts` against the real binding (Miniflare simulates it
+  locally) — each test scenario uses its own synthetic `CF-Connecting-IP`
+  so unrelated cases don't share a bucket.
 - **`usefulness` is the Negative Usefulness Index™** — zero or lower, enforced
   by a `CHECK (usefulness <= 0)` constraint on the column (0 is the *best* a
   fact can score: perfectly useless, as advertised). `uselessnessLabel()` in

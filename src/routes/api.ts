@@ -34,13 +34,27 @@ api.get('/fact', async (c) => {
 });
 
 // POST /api/v1/fact — open to anyone, no auth, by design (matches "any
-// tier" above). A submission is never immediately live: it lands
-// unapproved and GET /fact won't return it until reviewed (see
-// getRandomFact/submitFact in lib/facts.ts). That's the actual defense
-// against this being a public write endpoint with no rate limiting — a
-// spammed submission never reaches a reader, just a review queue nobody
-// has built a UI for yet.
+// tier" above). Two independent layers, not one doing double duty: the
+// moderation gate (a submission is never immediately live — GET /fact
+// won't return it until approved, see getRandomFact/submitFact in
+// lib/facts.ts) stops a flood from ever reaching a reader; the rate limit
+// below stops a flood from being written at all. Real, not the free
+// tier's advertised-but-unenforced joke above — SUBMIT_RATE_LIMITER is a
+// native Workers rate limit binding (wrangler.jsonc), keyed on the
+// client's IP.
 api.post('/fact', async (c) => {
+  // CF-Connecting-IP is set by Cloudflare's edge itself (unlike
+  // X-Forwarded-For, which a client could set before reaching it) — absent
+  // in local dev, where every request shares one bucket instead.
+  const clientIp = c.req.header('CF-Connecting-IP') ?? 'local-dev';
+  const { success } = await c.env.SUBMIT_RATE_LIMITER.limit({ key: clientIp });
+  if (!success) {
+    // The binding doesn't report a reset time; 60 is the configured
+    // window (wrangler.jsonc), not an exact countdown.
+    c.header('Retry-After', '60');
+    return c.json({ error: 'Too many submissions in a short window. Enterprise-grade patience has limits.' }, 429);
+  }
+
   let body: unknown;
   try {
     body = await c.req.json();

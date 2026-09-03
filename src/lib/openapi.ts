@@ -65,8 +65,9 @@ export const openApiSpec = {
       post: {
         summary: 'Submit a new useless fact',
         description:
-          'Open to anyone — no authentication required. A submission is never immediately live: it enters ' +
-          'editorial review and GET /fact will not return it until approved. Publication is not guaranteed.',
+          'Open to anyone — no authentication required, rate-limited instead (5 requests per 60s per IP). ' +
+          'A submission is never immediately live: it enters editorial review and GET /fact will not return ' +
+          'it until approved. Publication is not guaranteed.',
         operationId: 'submitFact',
         requestBody: {
           required: true,
@@ -94,6 +95,18 @@ export const openApiSpec = {
           },
           '400': {
             description: 'Missing, empty, or oversized "fact" field, or a non-JSON request body.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/Error' } },
+            },
+          },
+          '429': {
+            description: 'Rate limit exceeded — more than 5 submissions from this IP in the last 60 seconds.',
+            headers: {
+              'Retry-After': {
+                description: 'Seconds until the rate limit window resets. An approximation, not an exact countdown.',
+                schema: { type: 'integer', example: 60 },
+              },
+            },
             content: {
               'application/json': { schema: { $ref: '#/components/schemas/Error' } },
             },

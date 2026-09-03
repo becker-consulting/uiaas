@@ -26,6 +26,10 @@ Anyone can also submit a fact — `POST /api/v1/fact` with `{"fact": "..."}` —
 but a submission never shows up via `GET /fact` immediately. It lands
 unapproved (a D1 `approved` column, defaulting to `false`) and needs manual
 review first; there's no admin UI for that yet, just direct DB access.
+Submissions are also genuinely rate-limited (5 per 60 seconds per IP, a
+native Cloudflare Workers rate limit binding — a 6th attempt gets a real
+`429`, not an advertised-only header like the free tier's joke on `GET
+/fact`).
 
 ```json
 {
