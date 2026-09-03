@@ -6,6 +6,11 @@
   "observability": {
     "enabled": true
   },
+  // Requires becker-consulting.se to already be an active zone on the same
+  // Cloudflare account — Cloudflare provisions the DNS record + SSL cert
+  // for this on deploy, nothing further needed in this repo. The *.workers.dev
+  // URL keeps working alongside it unless workers_dev is explicitly disabled.
+  "routes": [{ "pattern": "uiaas.becker-consulting.se", "custom_domain": true }],
   "d1_databases": [
     {
       "binding": "DB",
