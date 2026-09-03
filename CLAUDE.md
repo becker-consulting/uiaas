@@ -64,7 +64,14 @@ reason, ask first, the same way merging into `master` itself needs asking.
   `src/lib/` for anything talking to a binding (D1 today). Don't over-organize
   ahead of actual size; this is a landing page and one endpoint, not a large app.
 - `src/index.tsx` stays a bare entrypoint — mounts `routes/api.ts` at `/api/v1`
-  and the landing page at `/`. Route logic belongs in `routes/`, not here.
+  and the landing page at `/`, plus a global `app.onError` that turns any
+  unhandled exception (e.g. a D1 query against a missing/un-migrated table)
+  into the same deadpan JSON shape as the API's own handled error cases,
+  rather than Hono's bare default 500. It logs the real error via
+  `console.error` first — visible in `wrangler dev`/`wrangler tail` — the
+  response itself never includes the underlying error. Route logic still
+  belongs in `routes/`, not here; this is the one thing that's genuinely
+  app-wide.
 - Every pricing tier (Free/Pro/Enterprise) hits the **exact same** endpoint and
   handler — the pricing page is cosmetic. Don't add real tier-gating to
   `routes/api.ts` unless explicitly asked to build that as a real feature (at
