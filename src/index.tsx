@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { swaggerUI } from '@hono/swagger-ui';
 import type { Env } from './types';
 import { api } from './routes/api';
+import { getApprovedFactCountCached } from './lib/facts';
 import { Landing } from './pages/Landing';
 import { ogImageSvg } from './pages/ogImage';
 
@@ -9,7 +10,10 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.route('/api/v1', api);
 
-app.get('/', (c) => c.html(<Landing />));
+app.get('/', async (c) => {
+  const factCount = await getApprovedFactCountCached(c.env.DB);
+  return c.html(<Landing factCount={factCount} />);
+});
 
 // The nav's "API" link — real Swagger UI against the real spec at
 // /api/v1/openapi.json (routes/api.ts), not a link straight to the raw

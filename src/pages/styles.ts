@@ -156,6 +156,15 @@ header.hero::before {
 
 header.hero > * { position: relative; }
 
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -168,7 +177,6 @@ header.hero > * { position: relative; }
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  margin-bottom: 28px;
 }
 
 .status-dot {
