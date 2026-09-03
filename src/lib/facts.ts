@@ -38,6 +38,44 @@ export async function submitFact(db: D1Database, fact: string): Promise<number> 
   return result.meta.last_row_id;
 }
 
+/** Total number of approved facts — the number GET /fact actually draws from. */
+export async function getApprovedFactCount(db: D1Database): Promise<number> {
+  const row = await db.prepare('SELECT COUNT(*) as count FROM facts WHERE approved = TRUE').first<{ count: number }>();
+  return row?.count ?? 0;
+}
+
+const FACT_COUNT_CACHE_KEY = new Request('https://internal.uiaas/cache/approved-fact-count');
+const FACT_COUNT_CACHE_TTL_SECONDS = 300;
+
+/**
+ * `getApprovedFactCount`, cached at Cloudflare's edge via the Workers Cache
+ * API — no extra binding needed, `caches.default` is a runtime global —
+ * so the landing page's "N facts in production" badge doesn't run a fresh
+ * `COUNT(*)` on every single page view. The cache key is a synthetic
+ * internal URL, not a real route; nothing external ever requests it.
+ * Simplicity over squeezing out the last bit of latency: the cache-miss
+ * path awaits the write-back inline rather than using `waitUntil` to
+ * return early, since that only costs the (rare, once per TTL window)
+ * request that repopulates the cache.
+ */
+export async function getApprovedFactCountCached(db: D1Database): Promise<number> {
+  const cache = caches.default;
+  const cached = await cache.match(FACT_COUNT_CACHE_KEY);
+  if (cached) {
+    const { count } = await cached.json<{ count: number }>();
+    return count;
+  }
+
+  const count = await getApprovedFactCount(db);
+  await cache.put(
+    FACT_COUNT_CACHE_KEY,
+    new Response(JSON.stringify({ count }), {
+      headers: { 'Cache-Control': `max-age=${FACT_COUNT_CACHE_TTL_SECONDS}`, 'Content-Type': 'application/json' },
+    }),
+  );
+  return count;
+}
+
 /** Formats a fact's row id as the public-facing `uiaas_00042`-style id. */
 export function toPublicFactId(id: number): string {
   return `uiaas_${String(id).padStart(5, '0')}`;

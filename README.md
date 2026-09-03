@@ -138,7 +138,7 @@ src/
   pages/styles.ts   — inlined CSS for the landing page
   pages/favicon.ts  — SVG data-URI favicon
   pages/ogImage.ts  — 1200x630 social-preview card, served at /og-image.svg
-  lib/facts.ts      — D1 access: a random approved fact, submitting a new one
+  lib/facts.ts      — D1 access: a random approved fact, submitting a new one, the (cached) approved count
   lib/openapi.ts    — hand-written OpenAPI 3.0 spec, backs Swagger UI at /docs
   config.ts         — Buy Me a Coffee handle, the real Becker Solutions credit, SITE_URL
   types.ts          — Env (bindings) type

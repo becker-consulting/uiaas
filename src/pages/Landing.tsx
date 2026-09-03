@@ -87,13 +87,18 @@ function Brand() {
   );
 }
 
-function Hero() {
+function Hero({ factCount }: { factCount: number }) {
   return (
     <header class="hero">
-      <span class="status-badge">
-        <span class="status-dot" />
-        ALL SYSTEMS OPERATIONAL
-      </span>
+      <div class="status-row">
+        <span class="status-badge">
+          <span class="status-dot" />
+          ALL SYSTEMS OPERATIONAL
+        </span>
+        <span class="status-badge">
+          {factCount} {factCount === 1 ? 'FACT' : 'FACTS'} IN PRODUCTION
+        </span>
+      </div>
       <h1 class="headline">What don&rsquo;t you need to know today?</h1>
       <p class="sub-hero">Enterprise-grade nonsense, delivered instantly.</p>
       <div class="hero-actions">
@@ -203,7 +208,7 @@ function Footer() {
   );
 }
 
-export function Landing() {
+export function Landing({ factCount }: { factCount: number }) {
   return (
     <html lang="en">
       <head>
@@ -258,7 +263,7 @@ export function Landing() {
             </div>
           </div>
         </nav>
-        <Hero />
+        <Hero factCount={factCount} />
         <div class="divider" />
         <Mission />
         <div class="divider" />

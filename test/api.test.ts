@@ -1,6 +1,6 @@
 import { env, exports as workerExports } from 'cloudflare:workers';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { MAX_FACT_LENGTH, uselessnessLabel } from '../src/lib/facts';
+import { MAX_FACT_LENGTH, getApprovedFactCount, getApprovedFactCountCached, uselessnessLabel } from '../src/lib/facts';
 // `?raw` inlines each migration's SQL as a string at build time, so setting
 // up the test database needs no runtime filesystem access (unavailable
 // inside the Workers runtime these tests execute in) — see migrations/,
@@ -202,6 +202,43 @@ describe('GET /', () => {
     expect(html).toContain('<meta property="og:image" content="https://uiaas.becker-consulting.se/og-image.svg"/>');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image"/>');
     expect(html).toContain('"@type":"WebSite"');
+  });
+
+  it('displays the current approved fact count', async () => {
+    // Exactly one approved fact exists at this point in the file (the
+    // beforeAll seed) — no earlier test inserts another approved row, only
+    // unapproved ones (POST /fact, the approval-gating test). Singular
+    // "FACT", not "FACTS".
+    const res = await workerExports.default.fetch(new Request('https://example.com/'));
+    const html = await res.text();
+    expect(html).toContain('1 FACT IN PRODUCTION');
+  });
+});
+
+// Deliberately placed after every other test that asserts an exact
+// fact-count-in-HTML — this test inserts an extra approved fact, which
+// would desync a later count assertion elsewhere in the file if this ran
+// first (the cache is shared across `it()` blocks in this file, same as
+// the D1 instance).
+describe('Fact count caching', () => {
+  it('serves a stale count from cache until the underlying data is queried fresh', async () => {
+    const before = await getApprovedFactCountCached(env.DB);
+    expect(before).toBe(1);
+
+    await env.DB.prepare('INSERT INTO facts (fact, usefulness, approved) VALUES (?, 0, TRUE)')
+      .bind('CACHE_STALENESS_PROBE_FACT')
+      .run();
+
+    // Cached value is unchanged even though the real count just moved —
+    // proving this actually reads from cache, not just re-querying D1
+    // every time under a different name.
+    const stillCached = await getApprovedFactCountCached(env.DB);
+    expect(stillCached).toBe(1);
+
+    // The underlying data genuinely changed; the uncached query proves the
+    // insert really happened and isn't somehow being masked by the cache.
+    const uncached = await getApprovedFactCount(env.DB);
+    expect(uncached).toBe(2);
   });
 });
 

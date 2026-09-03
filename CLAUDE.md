@@ -203,6 +203,20 @@ reason, ask first, the same way merging into `master` itself needs asking.
   in `test/api.test.ts` against the real binding (Miniflare simulates it
   locally) — each test scenario uses its own synthetic `CF-Connecting-IP`
   so unrelated cases don't share a bucket.
+- **The hero's "N FACTS IN PRODUCTION" badge is a real `COUNT(*) WHERE
+  approved = TRUE`, cached at the edge** — `getApprovedFactCountCached` in
+  `src/lib/facts.ts` uses the Workers Cache API (`caches.default`, a runtime
+  global — no binding to declare, no KV namespace to provision) rather than
+  querying D1 on every landing-page view. 5-minute TTL (`FACT_COUNT_CACHE_TTL_SECONDS`).
+  The cache-miss path `await`s the write-back inline instead of using
+  `ctx.waitUntil()` — a deliberate simplicity-over-latency call, since it
+  only costs the one request per TTL window that happens to repopulate the
+  cache, not every request. `getApprovedFactCount` (the uncached version)
+  stays exported too, for anything that needs a fresh, uncached number instead of a
+  cached one. Verified the caching genuinely works, not just that the
+  number renders — `test/api.test.ts`'s "Fact count caching" block inserts
+  an approved row between two cached reads and asserts the second read is
+  still stale, then confirms the uncached query sees the change.
 - **`usefulness` is the Negative Usefulness Index™** — zero or lower, enforced
   by a `CHECK (usefulness <= 0)` constraint on the column (0 is the *best* a
   fact can score: perfectly useless, as advertised). `uselessnessLabel()` in
