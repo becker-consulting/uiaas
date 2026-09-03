@@ -73,9 +73,6 @@ nav.site .wrap {
 }
 
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.3rem;
@@ -85,23 +82,12 @@ nav.site .wrap {
 }
 
 /* Space Grotesk's cap I has no serif and reads as a lowercase l next to
-   "aaS" (UIaaS -> "UlaaS") — a badge around just "UI" sidesteps the
-   ambiguity instead of fighting the font. */
+   lowercase letters (UIaaS -> "UlaaS") — color+weight on "UI" alone breaks
+   up the run instead of fighting the glyph shape. Shared by the nav
+   wordmark and every inline "UIaaS" mention (the Brand component in
+   Landing.tsx) so both read as one consistent treatment rather than two
+   different fixes bolted on. */
 .brand-ui { color: var(--brand-bright); font-weight: 700; }
-
-.logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--brand-bright), var(--brand));
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
 
 .nav-links { display: flex; gap: 28px; align-items: center; }
 .nav-links a:not(.btn) {

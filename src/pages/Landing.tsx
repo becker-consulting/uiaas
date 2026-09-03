@@ -1,4 +1,5 @@
 import { css } from './styles';
+import { faviconHref } from './favicon';
 import { BUY_ME_A_COFFEE_URL, COMPANY_LOCATION, COMPANY_NAME, COMPANY_URL } from '../config';
 
 // Client-side only: hits the live API and renders the response. Inlined as
@@ -196,6 +197,7 @@ export function Landing() {
           content="Enterprise-grade nonsense, delivered instantly. UIaaS provides random, entirely useless facts via a versioned API."
         />
         <meta name="theme-color" content="#08080c" />
+        <link rel="icon" type="image/svg+xml" href={faviconHref} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
@@ -208,7 +210,7 @@ export function Landing() {
         <nav class="site">
           <div class="wrap">
             <a class="logo" href="/">
-              <span class="logo-mark">UI</span>aaS
+              <Brand />
             </a>
             <div class="nav-links">
               <a href="#pricing">Pricing</a>
