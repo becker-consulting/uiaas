@@ -31,14 +31,16 @@ one.
 
 **`UIaaS` set in one weight visually collapses to "UlaaS"** — both loaded
 fonts render a plain sans-serif capital I indistinguishably from a lowercase
-l next to "aaS", so the brand name reads wrong at a glance. Fixed two ways,
-both in `Landing.tsx`: the nav wordmark wraps "UI" in `.logo-mark` (a solid
-badge — unambiguous since it's not relying on the glyph at all), and the
-`Brand` component (`<Brand />`) gives "UI" alone `.brand-ui`'s color+weight
-wherever the name appears in running body text (Mission blurb, footer
-copyright). Use `<Brand />` for any new visible "UIaaS" occurrence instead of
-typing the plain string — a `<title>`/`<meta>` value is the one exception,
-since those never render as on-page glyphs and don't hit this at all.
+l next to "aaS", so the brand name reads wrong at a glance. Fixed with the
+`Brand` component (`<Brand />`, `Landing.tsx`): `.brand-ui`'s color+weight on
+"UI" alone breaks up the run everywhere the name appears — the nav wordmark
+included, not a separate treatment there. (An earlier pass gave the nav its
+own boxed `.logo-mark` badge instead; dropped for looking inconsistent next
+to the plain-text treatment used everywhere else — one visual system reads
+better than two independent fixes.) Use `<Brand />` for any new visible
+"UIaaS" occurrence instead of typing the plain string — a `<title>`/`<meta>`
+value is the one exception, since those never render as on-page glyphs and
+don't hit this at all.
 
 ## Commands
 
