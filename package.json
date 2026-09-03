@@ -1,0 +1,34 @@
+{
+  "name": "uiaas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Useless Information as a Service — a parody SaaS that returns random, entirely useless facts.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply uiaas-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply uiaas-db --remote",
+    "db:seed:local": "wrangler d1 execute uiaas-db --local --file=./seed.sql",
+    "db:seed:remote": "wrangler d1 execute uiaas-db --remote --file=./seed.sql"
+  },
+  "dependencies": {
+    "hono": "^4.13.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.1.3",
+    "@types/node": "^26.4.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.128.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260815.1": true,
+    "workerd@1.20260831.1": true
+  }
+}

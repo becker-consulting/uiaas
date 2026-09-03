@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "uiaas",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-09-03",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "uiaas-db",
+      // Placeholder — replace after running `wrangler d1 create uiaas-db` (see README).
+      "database_id": "6c7b83b3-908f-4402-9962-dbba63bef160",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
