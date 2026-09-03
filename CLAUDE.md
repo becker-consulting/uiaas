@@ -75,10 +75,10 @@ reason, ask first, the same way merging into `master` itself needs asking.
   `routes/api.ts`) and **deliberately not enforced** — see the brief's "API
   sketch" section. That's a joke, not an oversight; don't "fix" it by adding
   real rate limiting without being asked.
-- `src/config.ts`'s `BUY_ME_A_COFFEE_HANDLE` is a placeholder
-  (`REPLACE_WITH_HANDLE`) — no account exists yet. Every place the "Beg for
-  money" button appears reads `BUY_ME_A_COFFEE_URL` from that one file; don't
-  hardcode a buymeacoffee.com link anywhere else.
+- `src/config.ts`'s `BUY_ME_A_COFFEE_HANDLE` (`handiman`) is the single
+  source for the "Beg for money" button's link — every place the button
+  appears reads `BUY_ME_A_COFFEE_URL` from that one file; don't hardcode a
+  buymeacoffee.com link anywhere else.
 
 ## Facts data (D1)
 
