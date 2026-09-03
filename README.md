@@ -114,7 +114,7 @@ this has a GitHub remote worth protecting.
 
 ## Beg for money
 
-The button links to `src/config.ts`'s `BUY_ME_A_COFFEE_HANDLE`, currently a
-placeholder — there's no Buy Me a Coffee account yet. Once one exists, drop
-the real handle in there; every place the button appears reads from that one
-constant.
+The button links to `https://buymeacoffee.com/handiman`, set via
+`BUY_ME_A_COFFEE_HANDLE` in [src/config.ts](src/config.ts) — every place the
+button appears reads from that one constant, so a rename only means changing
+it there.
