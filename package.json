@@ -4,6 +4,8 @@
   "private": true,
   "description": "Useless Information as a Service — a parody SaaS that returns random, entirely useless facts.",
   "type": "module",
+  "license": "MIT",
+  "author": "Henrik Becker Consulting AB",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

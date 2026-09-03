@@ -181,3 +181,10 @@ The button links to `https://buymeacoffee.com/handiman`, set via
 `BUY_ME_A_COFFEE_HANDLE` in [src/config.ts](src/config.ts) — every place the
 button appears reads from that one constant, so a rename only means changing
 it there.
+
+## License
+
+[MIT](LICENSE) — permissive by design, since this is a portfolio piece
+meant to be looked at (and copied from, if anything here is useful) rather
+than a product with patent concerns or a reason to force derivatives to
+stay open.
