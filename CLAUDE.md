@@ -13,6 +13,33 @@ the brief as a starting sketch. The tone throughout is **deadpan**: the app
 takes itself exactly as seriously as a real SaaS would. No wink emoji, no
 "lol jk" anywhere in copy or comments that face the reader.
 
+## Look and feel
+
+Dark, self-serious enterprise SaaS — a deliberate single look, not a
+light/dark toggle (`src/pages/styles.ts`'s `:root` sets `color-scheme: dark`
+unconditionally; there's no light-mode block to keep in sync). Deep-black
+background with a subtle grid texture, a violet brand glow behind the hero,
+`Space Grotesk` for display type + `Inter` for body (loaded from Google
+Fonts in `Landing.tsx`'s `<head>` — a real font CDN load for a real deployed
+site, not the Artifact-tool CDN allowlist some other Claude Code contexts
+apply, which doesn't govern this repo at all), gold for the "Beg for money"
+CTA specifically so it reads as the odd one out against the violet primary
+buttons. Status-page furniture ("● ALL SYSTEMS OPERATIONAL" above the hero)
+and monospace `$`-figure pricing lean into "taking itself too seriously" —
+extend that vocabulary for new sections rather than introducing a different
+one.
+
+**`UIaaS` set in one weight visually collapses to "UlaaS"** — both loaded
+fonts render a plain sans-serif capital I indistinguishably from a lowercase
+l next to "aaS", so the brand name reads wrong at a glance. Fixed two ways,
+both in `Landing.tsx`: the nav wordmark wraps "UI" in `.logo-mark` (a solid
+badge — unambiguous since it's not relying on the glyph at all), and the
+`Brand` component (`<Brand />`) gives "UI" alone `.brand-ui`'s color+weight
+wherever the name appears in running body text (Mission blurb, footer
+copyright). Use `<Brand />` for any new visible "UIaaS" occurrence instead of
+typing the plain string — a `<title>`/`<meta>` value is the one exception,
+since those never render as on-page glyphs and don't hit this at all.
+
 ## Commands
 
 See "Commands" and "Setup" in [README.md](README.md) for the full list.

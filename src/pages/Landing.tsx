@@ -56,9 +56,25 @@ const PRICING_TIERS = [
   },
 ] as const;
 
+// "UIaaS" set in one weight reads as "UlaaS" in both fonts here (a plain
+// sans cap I next to lowercase letters collapses into a lowercase l) — a
+// lighter version of the nav logo's badge fix for inline body text: color
+// and weight break up the run instead of leaning on the glyph shape.
+function Brand() {
+  return (
+    <span>
+      <span class="brand-ui">UI</span>aaS
+    </span>
+  );
+}
+
 function Hero() {
   return (
     <header class="hero">
+      <span class="status-badge">
+        <span class="status-dot" />
+        ALL SYSTEMS OPERATIONAL
+      </span>
       <p class="tagline">Providing useless information since 2026.</p>
       <h1 class="headline">What don&rsquo;t you need to know today?</h1>
       <p class="sub-hero">Enterprise-grade nonsense, delivered instantly.</p>
@@ -67,7 +83,7 @@ function Hero() {
           Get Started Free
         </a>
         <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-          💸 Beg for money
+          Beg for money
         </a>
       </div>
     </header>
@@ -79,7 +95,7 @@ function Mission() {
     <section class="mission">
       <div class="wrap">
         <p>
-          UIaaS exists to deliver information you did not ask for, will not remember, and cannot act on &mdash;
+          <Brand /> exists to deliver information you did not ask for, will not remember, and cannot act on &mdash;
           reliably, at scale, with an SLA. We take that responsibility exactly as seriously as it deserves.
         </p>
       </div>
@@ -115,7 +131,7 @@ function Pricing() {
             <div class={`tier${tier.badge ? ' featured' : ''}`}>
               {tier.badge && <span class="badge">{tier.badge}</span>}
               <h3>{tier.name}</h3>
-              <div class="price">
+              <div class={`price${tier.price.startsWith('$') ? ' price-numeric' : ''}`}>
                 {tier.price}
                 {tier.period && <span>{tier.period}</span>}
               </div>
@@ -150,10 +166,12 @@ function Footer() {
         <p>Trusted by absolutely no one.</p>
         <div class="beg-footer">
           <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-            💸 Beg for money
+            Beg for money
           </a>
         </div>
-        <p>&copy; 2026 UIaaS. All rights reserved (there is nothing worth stealing).</p>
+        <p>
+          &copy; 2026 <Brand />. All rights reserved (there is nothing worth stealing).
+        </p>
       </div>
     </footer>
   );
@@ -170,25 +188,34 @@ export function Landing() {
           name="description"
           content="Enterprise-grade nonsense, delivered instantly. UIaaS provides random, entirely useless facts via a versioned API."
         />
+        <meta name="theme-color" content="#08080c" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
+        />
         <style dangerouslySetInnerHTML={{ __html: css }} />
       </head>
       <body>
         <nav class="site">
-          <div class="wrap" style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+          <div class="wrap">
             <a class="logo" href="/">
-              UIaaS
+              <span class="logo-mark">UI</span>aaS
             </a>
             <div class="nav-links">
               <a href="#pricing">Pricing</a>
               <a href="/api/v1/fact">API</a>
               <a class="btn btn-beg" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-                💸 Beg for money
+                Beg for money
               </a>
             </div>
           </div>
         </nav>
         <Hero />
+        <div class="divider" />
         <Mission />
+        <div class="divider" />
         <Demo />
         <Pricing />
         <Footer />
