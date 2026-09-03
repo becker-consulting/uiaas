@@ -348,4 +348,21 @@ footer.site {
 }
 
 footer.site .beg-footer { margin: 18px 0; }
+
+/* The one real line in the footer — set apart from the in-character
+   copyright line above it with its own divider, rather than blending into
+   the joke copy's look. */
+.built-by {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+.built-by a {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+.built-by a:hover { color: var(--brand-bright); }
 `;

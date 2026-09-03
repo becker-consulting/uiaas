@@ -1,5 +1,5 @@
 import { css } from './styles';
-import { BUY_ME_A_COFFEE_URL } from '../config';
+import { BUY_ME_A_COFFEE_URL, COMPANY_NAME, COMPANY_URL } from '../config';
 
 // Client-side only: hits the live API and renders the response. Inlined as
 // a string (not a separate asset) for the same one-page-site reason as
@@ -171,6 +171,13 @@ function Footer() {
         </div>
         <p>
           &copy; 2026 <Brand />. All rights reserved (there is nothing worth stealing).
+        </p>
+        <p class="built-by">
+          Built by{' '}
+          <a href={COMPANY_URL} target="_blank" rel="noopener noreferrer">
+            {COMPANY_NAME}
+          </a>
+          .
         </p>
       </div>
     </footer>

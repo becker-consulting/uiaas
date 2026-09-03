@@ -113,6 +113,13 @@ reason, ask first, the same way merging into `master` itself needs asking.
   source for the "Beg for money" button's link — every place the button
   appears reads `BUY_ME_A_COFFEE_URL` from that one file; don't hardcode a
   buymeacoffee.com link anywhere else.
+- **`COMPANY_NAME`/`COMPANY_URL` in `src/config.ts` are the one genuinely
+  real thing on the page** — a "Built by Becker Solutions" credit in the
+  footer (`.built-by` in `styles.ts`), deliberately styled distinctly from
+  the in-character `© 2026 UIaaS...` line above it (its own divider, muted
+  rather than brand-colored) so it doesn't read as part of the joke. This
+  project is meant to be shown off (CV, LinkedIn) — don't fold this credit
+  into the parody copy or remove it without being asked.
 
 ## Facts data (D1)
 
