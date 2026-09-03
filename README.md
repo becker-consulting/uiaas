@@ -162,10 +162,16 @@ something a submitter sets for themselves.
 
 ## Deployment
 
-`npm run deploy` (needs `wrangler login` and a real `database_id` in
-`wrangler.jsonc`). No CI/CD is wired up yet — add a GitHub Actions workflow
-(typecheck + test on every push/PR, deploy on a passing push to `master`) once
-this has a GitHub remote worth protecting.
+Live at [uiaas.becker-consulting.se](https://uiaas.becker-consulting.se)
+(`routes` in `wrangler.jsonc`, `custom_domain: true` — needs
+`becker-consulting.se` already set up as a zone on the Cloudflare account;
+nothing else to configure) as well as the usual `*.workers.dev` URL.
+
+`.github/workflows/ci.yml` runs typecheck + test on every push/PR against
+`master`, and deploys (`wrangler deploy`) on a passing push to `master` —
+needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as repo secrets.
+`npm run deploy` also works by hand (needs `wrangler login` and a real
+`database_id` in `wrangler.jsonc`).
 
 ## Sponsor an Endpoint
 

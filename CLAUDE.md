@@ -292,10 +292,28 @@ knowing before touching test setup:
 - `compatibility_date` should track roughly the date this was last bumped,
   not drift indefinitely — update it deliberately, not as a side effect of an
   unrelated change.
+- **`routes` in `wrangler.jsonc` points this Worker at
+  `uiaas.becker-consulting.se`** (`custom_domain: true`) — Cloudflare
+  provisions the DNS record and SSL cert on deploy; the only prerequisite is
+  `becker-consulting.se` already being an active zone on the same Cloudflare
+  account, nothing else needed in this repo. The `*.workers.dev` URL keeps
+  working alongside the custom domain — `routes` adds to that, it doesn't
+  replace it, unless `workers_dev` is explicitly set to `false`.
 
-## No CI yet
+## CI/CD
 
-There's no GitHub remote or `.github/workflows/` yet — this was scaffolded
-locally first. Add CI (typecheck + test on push/PR, deploy on a passing push
-to `master`, mirroring the pattern in the sibling `wild-swimmer-app` repo's
-`CLAUDE.md`) once there's a remote worth protecting, not before.
+`.github/workflows/ci.yml` — a `test` job (`npm run cf-typegen && npm run
+typecheck && npm test`) on every push and PR against `master`, plus, only
+for a push to `master` that passes `test`, a `deploy` job running `wrangler
+deploy` directly (unlike the sibling `wild-swimmer-app` repo's CI, which
+deploys by dispatching a workflow in a separate site repo — `uiaas` deploys
+itself, there's no separate site repo to hand off to). `cf-typegen` is a
+CI-only step here (see "Platform config" below on why `worker-configuration.d.ts`
+is never committed) — it doesn't run in the `deploy` job, since `wrangler
+deploy` bundles with esbuild and never runs `tsc` itself.
+
+Needs two repo secrets to actually deploy: `CLOUDFLARE_API_TOKEN` (scoped to
+this account, "Workers Scripts: Edit" at minimum) and `CLOUDFLARE_ACCOUNT_ID`.
+Editing `ci.yml`'s `deploy` job is a change to what triggers a production
+deploy on every merge to `master` — treat it with the same care as touching
+`wrangler.jsonc` itself.
