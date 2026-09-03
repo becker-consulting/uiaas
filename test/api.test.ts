@@ -1,19 +1,36 @@
 import { env, exports as workerExports } from 'cloudflare:workers';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { uselessnessLabel } from '../src/lib/facts';
-// `?raw` inlines the migration's SQL as a string at build time, so setting
+import { MAX_FACT_LENGTH, uselessnessLabel } from '../src/lib/facts';
+// `?raw` inlines each migration's SQL as a string at build time, so setting
 // up the test database needs no runtime filesystem access (unavailable
-// inside the Workers runtime these tests execute in) — see
-// migrations/0001_create_facts_table.sql, the single source of truth for
-// this schema.
+// inside the Workers runtime these tests execute in) — see migrations/,
+// the single source of truth for this schema.
 import createFactsTable from '../migrations/0001_create_facts_table.sql?raw';
+import addApprovedColumn from '../migrations/0002_add_approved_column.sql?raw';
 
 beforeAll(async () => {
   // `.prepare()` (a real SQL parse) rather than `.exec()` — `.exec()` splits
-  // naively on newlines and chokes on the migration's leading comment block
-  // and multi-line CREATE TABLE.
+  // naively on newlines and chokes on a migration's leading comment block
+  // and multi-line statements. 0002 has two statements in one file, so
+  // comment lines are stripped and what's left is split on `;` and run
+  // separately — `.prepare()` only ever parses one statement per call.
+  // (Stripping comments first matters: a `;` inside a comment — e.g. an
+  // ordinary sentence — would otherwise split mid-comment and break this.)
   await env.DB.prepare(createFactsTable).run();
-  await env.DB.prepare('INSERT INTO facts (fact, usefulness) VALUES (?, 0)').bind('Test fact for the test suite.').run();
+  const statements = addApprovedColumn
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n')
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const statement of statements) {
+    await env.DB.prepare(statement).run();
+  }
+  await env.DB
+    .prepare('INSERT INTO facts (fact, usefulness, approved) VALUES (?, 0, TRUE)')
+    .bind('Test fact for the test suite.')
+    .run();
 });
 
 describe('GET /api/v1/fact', () => {
@@ -71,6 +88,100 @@ describe('Negative Usefulness Index™', () => {
     [-100, 'Legally you cannot un-know this.'],
   ])('labels a score of %i as %j', (score, label) => {
     expect(uselessnessLabel(score)).toBe(label);
+  });
+});
+
+describe('Approval gating', () => {
+  it('never returns an unapproved fact from GET /fact', async () => {
+    await env.DB.prepare('INSERT INTO facts (fact, usefulness) VALUES (?, 0)').bind('UNAPPROVED_SENTINEL_FACT').run();
+
+    const row = await env.DB.prepare('SELECT approved FROM facts WHERE fact = ?').bind('UNAPPROVED_SENTINEL_FACT').first<{
+      approved: number;
+    }>();
+    expect(row?.approved).toBe(0); // approved defaults to FALSE (0) when not specified on insert
+
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () => workerExports.default.fetch(new Request('https://example.com/api/v1/fact'))),
+    );
+    for (const res of responses) {
+      const body = await res.json<{ fact: string }>();
+      expect(body.fact).not.toBe('UNAPPROVED_SENTINEL_FACT');
+    }
+  });
+});
+
+// Every scenario below uses its own synthetic CF-Connecting-IP so unrelated
+// test cases don't share a rate-limit bucket (real requests get this header
+// set by Cloudflare's edge — see routes/api.ts — but nothing stops a test
+// from setting it directly, since there's no real edge in front here).
+function postFact(body: unknown, ip: string, contentType = 'application/json') {
+  return workerExports.default.fetch(
+    new Request('https://example.com/api/v1/fact', {
+      method: 'POST',
+      headers: { 'Content-Type': contentType, 'CF-Connecting-IP': ip },
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+    }),
+  );
+}
+
+describe('POST /api/v1/fact', () => {
+  it('accepts a submission, queues it for review, and never serves it via GET', async () => {
+    const submitRes = await postFact({ fact: 'SUBMITTED_SENTINEL_FACT' }, '10.0.0.1');
+    expect(submitRes.status).toBe(201);
+
+    const body = await submitRes.json<{ id: string; status: string; message: string }>();
+    expect(body.id).toMatch(/^uiaas_\d{5}$/);
+    expect(body.status).toBe('pending_review');
+    expect(typeof body.message).toBe('string');
+
+    const stored = await env.DB.prepare('SELECT usefulness, approved FROM facts WHERE fact = ?')
+      .bind('SUBMITTED_SENTINEL_FACT')
+      .first<{ usefulness: number; approved: number }>();
+    expect(stored?.usefulness).toBe(0);
+    expect(stored?.approved).toBe(0);
+
+    const getRes = await workerExports.default.fetch(new Request('https://example.com/api/v1/fact'));
+    const getBody = await getRes.json<{ fact: string }>();
+    expect(getBody.fact).not.toBe('SUBMITTED_SENTINEL_FACT');
+  });
+
+  it.each([
+    ['missing the "fact" field entirely', {}],
+    ['an empty string', { fact: '' }],
+    ['a whitespace-only string', { fact: '   ' }],
+    ['a non-string value', { fact: 42 }],
+    ['a fact longer than the maximum length', { fact: 'x'.repeat(MAX_FACT_LENGTH + 1) }],
+  ])('rejects a submission with %s', async (_label, payload) => {
+    const res = await postFact(payload, '10.0.0.2');
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a non-JSON request body', async () => {
+    const res = await postFact('not json', '10.0.0.3', 'text/plain');
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/v1/fact rate limiting', () => {
+  it('allows the configured burst, then 429s with a Retry-After header', async () => {
+    const ip = '10.0.0.4';
+    const responses: Response[] = [];
+    for (let i = 0; i < 6; i++) {
+      responses.push(await postFact({ fact: `RATE_LIMIT_PROBE_${i}` }, ip));
+    }
+
+    // wrangler.jsonc's SUBMIT_RATE_LIMITER: simple.limit is 5 per 60s.
+    expect(responses.slice(0, 5).map((r) => r.status)).toEqual([201, 201, 201, 201, 201]);
+    expect(responses[5].status).toBe(429);
+    expect(responses[5].headers.get('Retry-After')).toBe('60');
+
+    const body = await responses[5].json<{ error: string }>();
+    expect(body.error).toMatch(/too many submissions/i);
+  });
+
+  it("doesn't count against a different IP's budget", async () => {
+    const res = await postFact({ fact: 'RATE_LIMIT_UNAFFECTED_IP' }, '10.0.0.5');
+    expect(res.status).toBe(201);
   });
 });
 

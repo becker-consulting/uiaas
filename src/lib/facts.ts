@@ -5,16 +5,37 @@ export type FactRow = {
 };
 
 /**
- * One random row from `facts`, or `null` if the table is empty (e.g. a fresh
- * database before `npm run db:seed:local`/`db:seed:remote` has been run).
+ * One random *approved* row from `facts`, or `null` if there isn't one yet
+ * (e.g. a fresh database before `npm run db:seed:local`/`db:seed:remote`
+ * has been run). A crowd-submitted fact (see `submitFact` below) is
+ * unapproved by default and won't be returned here until it's reviewed —
+ * there's no admin UI for that yet, just direct DB access.
  *
  * `ORDER BY RANDOM()` is a full-table scan — fine at this table's expected
- * size (a curated/occasionally-fetched fact list, not user-generated data),
- * not something to reach for on a large table.
+ * size (a curated/occasionally-fetched fact list, not user-generated data
+ * at any real scale yet), not something to reach for on a large table.
  */
 export async function getRandomFact(db: D1Database): Promise<FactRow | null> {
-  const row = await db.prepare('SELECT id, fact, usefulness FROM facts ORDER BY RANDOM() LIMIT 1').first<FactRow>();
+  const row = await db
+    .prepare('SELECT id, fact, usefulness FROM facts WHERE approved = TRUE ORDER BY RANDOM() LIMIT 1')
+    .first<FactRow>();
   return row ?? null;
+}
+
+/** Longest `fact` string POST /fact will accept — see routes/api.ts. */
+export const MAX_FACT_LENGTH = 500;
+
+/**
+ * Inserts a crowd-submitted fact and returns its row id. Always lands
+ * unapproved (the `approved` column's own default — see
+ * migrations/0002_add_approved_column.sql) and at the default `usefulness`
+ * score (0): scoring a fact on the Negative Usefulness Index™ is an
+ * editorial judgment call (see uselessnessLabel's doc comment), not
+ * something a submitter sets for themselves.
+ */
+export async function submitFact(db: D1Database, fact: string): Promise<number> {
+  const result = await db.prepare('INSERT INTO facts (fact) VALUES (?)').bind(fact).run();
+  return result.meta.last_row_id;
 }
 
 /** Formats a fact's row id as the public-facing `uiaas_00042`-style id. */

@@ -136,12 +136,37 @@ reason, ask first, the same way merging into `master` itself needs asking.
 
 ## Facts data (D1)
 
-- `migrations/` is the schema (currently just the one `facts` table: `id`,
-  `fact`, `usefulness`). `seed.sql` is curated starter content, loaded
-  **separately** from migrations (`npm run db:seed:local`/`db:seed:remote`)
-  — it's data, not schema, so it doesn't get a migration file of its own.
-  Re-running it against a non-empty table duplicates rows; clear the table
-  first if that's not wanted.
+- `migrations/` is the schema — the one `facts` table: `id`, `fact`,
+  `usefulness`, `approved` (0001 + 0002, see below). `seed.sql` is curated
+  starter content, loaded **separately** from migrations (`npm run
+  db:seed:local`/`db:seed:remote`) — it's data, not schema, so it doesn't get
+  a migration file of its own. Re-running it against a non-empty table
+  duplicates rows; clear the table first if that's not wanted.
+- **`approved` (0002) gates a fact behind manual review before `GET /fact`
+  will ever serve it** — `getRandomFact` in `src/lib/facts.ts` filters on
+  `WHERE approved = TRUE`. The column defaults to `FALSE`; `seed.sql` sets
+  it explicitly to `TRUE` on every curated row (it isn't crowd-submitted, so
+  it should be visible immediately) — a future addition to `seed.sql` needs
+  to do the same, or the row will silently never show up. `POST /fact`
+  (`routes/api.ts`, `submitFact` in `lib/facts.ts`) is the only other way a
+  row gets created, and it's open to anyone with no authentication — the
+  unapproved-by-default gate is what stops a flood from ever reaching a
+  reader. There's no admin UI to actually approve a submission yet — that's
+  direct DB access (`wrangler d1 execute`) for now.
+- **`POST /fact` is also rate-limited for real** — `SUBMIT_RATE_LIMITER` in
+  `wrangler.jsonc` is a native Workers rate-limit binding (`ratelimits`,
+  `simple: { limit: 5, period: 60 }`), keyed on `CF-Connecting-IP` in
+  `routes/api.ts`. This is a second, independent layer from the moderation
+  gate above, not the same protection twice — moderation stops a flood from
+  becoming visible, the rate limit stops it from being written at all. It's
+  real (returns 429 + `Retry-After`), unlike the free tier's advertised-only
+  headers on `GET /fact` — don't confuse the two or assume this one is a
+  joke too. The binding's `period` is fixed by the platform to 10 or 60
+  seconds (burst protection, not a "N per day" quota) and needs no zone or
+  custom domain — it works on the `*.workers.dev` deployment too. Verified
+  in `test/api.test.ts` against the real binding (Miniflare simulates it
+  locally) — each test scenario uses its own synthetic `CF-Connecting-IP`
+  so unrelated cases don't share a bucket.
 - **`usefulness` is the Negative Usefulness Index™** — zero or lower, enforced
   by a `CHECK (usefulness <= 0)` constraint on the column (0 is the *best* a
   fact can score: perfectly useless, as advertised). `uselessnessLabel()` in
@@ -160,7 +185,9 @@ reason, ask first, the same way merging into `master` itself needs asking.
   section's rule against rebasing pushed branches, just for D1 instead of git.
   If unsure whether 0001 has been applied remotely, check with that same
   `wrangler d1 migrations list uiaas-db --remote` command rather than assuming
-  either way.
+  either way. The `approved` column (below) is the first change made under
+  this rule — `0002_add_approved_column.sql` is a genuine new migration
+  (`ALTER TABLE` + a backfill `UPDATE`), not a further edit to 0001.
 - The plan (per the brief and how this was scoped when scaffolded) is to grow
   the fact list beyond the ~15-row seed later — either more curated rows or a
   one-off fetch from an external source, loaded the same way `seed.sql` is,
@@ -228,6 +255,16 @@ knowing before touching test setup:
   fine. Add future migrations following the same shape (a comment header,
   then normal multi-line SQL) — this constraint is about D1's `.exec()`, not
   something the migration files need to work around themselves.
+- **A migration with more than one statement needs each one `.prepare()`d
+  separately** — `.prepare()` only parses one statement per call, so
+  `test/api.test.ts` splits a multi-statement migration's raw SQL on `;`
+  and runs each piece. Comment lines are stripped *before* that split, not
+  after — a plain English sentence in a comment (e.g. "...unapproved; the
+  curated rows...", hit for real writing 0002's own header comment) contains
+  a `;` too, and splitting on it mid-comment produces a fragment with no
+  actual statement, which D1 rejects with "SQL code did not contain a
+  statement." Splitting only what's left after stripping `--`-prefixed
+  lines avoids this regardless of what a future migration's comments say.
 - Prefer `cloudflare:workers`' `env`/`exports` over `cloudflare:test`'s
   `env`/`SELF` — the latter are marked `@deprecated` in
   `@cloudflare/vitest-plugin`'s own type declarations (still functional, just

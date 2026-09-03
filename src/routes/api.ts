@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { getRandomFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
+import { getRandomFact, MAX_FACT_LENGTH, submitFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
 import { openApiSpec } from '../lib/openapi';
 
 export const api = new Hono<{ Bindings: Env }>();
@@ -31,4 +31,54 @@ api.get('/fact', async (c) => {
     id: toPublicFactId(row.id),
     tier_required: 'any',
   });
+});
+
+// POST /api/v1/fact — open to anyone, no auth, by design (matches "any
+// tier" above). Two independent layers, not one doing double duty: the
+// moderation gate (a submission is never immediately live — GET /fact
+// won't return it until approved, see getRandomFact/submitFact in
+// lib/facts.ts) stops a flood from ever reaching a reader; the rate limit
+// below stops a flood from being written at all. Real, not the free
+// tier's advertised-but-unenforced joke above — SUBMIT_RATE_LIMITER is a
+// native Workers rate limit binding (wrangler.jsonc), keyed on the
+// client's IP.
+api.post('/fact', async (c) => {
+  // CF-Connecting-IP is set by Cloudflare's edge itself (unlike
+  // X-Forwarded-For, which a client could set before reaching it) — absent
+  // in local dev, where every request shares one bucket instead.
+  const clientIp = c.req.header('CF-Connecting-IP') ?? 'local-dev';
+  const { success } = await c.env.SUBMIT_RATE_LIMITER.limit({ key: clientIp });
+  if (!success) {
+    // The binding doesn't report a reset time; 60 is the configured
+    // window (wrangler.jsonc), not an exact countdown.
+    c.header('Retry-After', '60');
+    return c.json({ error: 'Too many submissions in a short window. Enterprise-grade patience has limits.' }, 429);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Request body must be valid JSON.' }, 400);
+  }
+
+  const fact = body !== null && typeof body === 'object' && 'fact' in body ? (body as { fact: unknown }).fact : undefined;
+  if (typeof fact !== 'string' || fact.trim().length === 0) {
+    return c.json({ error: 'A non-empty "fact" string is required.' }, 400);
+  }
+  const trimmed = fact.trim();
+  if (trimmed.length > MAX_FACT_LENGTH) {
+    return c.json({ error: `"fact" must be ${MAX_FACT_LENGTH} characters or fewer.` }, 400);
+  }
+
+  const id = await submitFact(c.env.DB, trimmed);
+
+  return c.json(
+    {
+      id: toPublicFactId(id),
+      status: 'pending_review',
+      message: "Submission received and entered into editorial review. Published submissions are selected at UIaaS's sole discretion.",
+    },
+    201,
+  );
 });
