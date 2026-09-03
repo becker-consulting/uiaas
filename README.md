@@ -7,7 +7,7 @@ returns random, entirely useless facts. Everything else (pricing tiers, an
 "Enterprise" plan, a fake rate limit) is played completely straight. See
 [uiaas-brief.md](uiaas-brief.md) for the original concept brief.
 
-**Live product, one endpoint:** `GET /api/v1/fact`
+**Live product:** `GET /api/v1/fact`
 
 ```json
 {
@@ -21,6 +21,19 @@ returns random, entirely useless facts. Everything else (pricing tiers, an
 
 `usefulness` is the Negative Usefulness Index™ — always zero or lower (a D1
 `CHECK` constraint enforces it), scored per fact in `seed.sql`.
+
+Anyone can also submit a fact — `POST /api/v1/fact` with `{"fact": "..."}` —
+but a submission never shows up via `GET /fact` immediately. It lands
+unapproved (a D1 `approved` column, defaulting to `false`) and needs manual
+review first; there's no admin UI for that yet, just direct DB access.
+
+```json
+{
+  "id": "uiaas_00016",
+  "status": "pending_review",
+  "message": "Submission received and entered into editorial review. Published submissions are selected at UIaaS's sole discretion."
+}
+```
 
 Full interactive API docs (Swagger UI, generated from a real OpenAPI 3.0
 spec — "Try it out" hits the actual live endpoint) are at `/docs`.
@@ -110,10 +123,10 @@ Same `type`s name each short-lived branch — see [CLAUDE.md](CLAUDE.md#branchin
 ```
 src/
   index.tsx        — Hono app entry: mounts the API, the landing page, /docs
-  routes/api.ts     — GET /api/v1/fact, GET /api/v1/openapi.json
+  routes/api.ts     — GET/POST /api/v1/fact, GET /api/v1/openapi.json
   pages/Landing.tsx — the whole landing page (hero, pricing, demo, footer)
   pages/styles.ts   — inlined CSS for the landing page
-  lib/facts.ts      — D1 query for a random fact
+  lib/facts.ts      — D1 access: a random approved fact, submitting a new one
   lib/openapi.ts    — hand-written OpenAPI 3.0 spec, backs Swagger UI at /docs
   config.ts         — Buy Me a Coffee handle + the real Becker Solutions credit
   types.ts          — Env (bindings) type
@@ -121,6 +134,21 @@ migrations/          — D1 schema migrations (npm run db:migrate:*)
 seed.sql              — curated starter facts, loaded separately from migrations
 test/                 — vitest, runs inside the Workers runtime
 ```
+
+## Approving a submission
+
+`POST /api/v1/fact` is open to anyone and never publishes immediately —
+there's no admin UI yet, just direct DB access:
+
+```bash
+npx wrangler d1 execute uiaas-db --remote \
+  --command "UPDATE facts SET approved = TRUE WHERE id = <row id>"
+```
+
+(`--local` against the dev database instead, while testing.) Worth setting
+`usefulness` at the same time — a submission always lands scored `0`, since
+scoring on the Negative Usefulness Index™ is an editorial call, not
+something a submitter sets for themselves.
 
 ## Deployment
 

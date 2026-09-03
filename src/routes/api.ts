@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { getRandomFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
+import { getRandomFact, MAX_FACT_LENGTH, submitFact, toPublicFactId, uselessnessLabel } from '../lib/facts';
 import { openApiSpec } from '../lib/openapi';
 
 export const api = new Hono<{ Bindings: Env }>();
@@ -31,4 +31,40 @@ api.get('/fact', async (c) => {
     id: toPublicFactId(row.id),
     tier_required: 'any',
   });
+});
+
+// POST /api/v1/fact — open to anyone, no auth, by design (matches "any
+// tier" above). A submission is never immediately live: it lands
+// unapproved and GET /fact won't return it until reviewed (see
+// getRandomFact/submitFact in lib/facts.ts). That's the actual defense
+// against this being a public write endpoint with no rate limiting — a
+// spammed submission never reaches a reader, just a review queue nobody
+// has built a UI for yet.
+api.post('/fact', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Request body must be valid JSON.' }, 400);
+  }
+
+  const fact = body !== null && typeof body === 'object' && 'fact' in body ? (body as { fact: unknown }).fact : undefined;
+  if (typeof fact !== 'string' || fact.trim().length === 0) {
+    return c.json({ error: 'A non-empty "fact" string is required.' }, 400);
+  }
+  const trimmed = fact.trim();
+  if (trimmed.length > MAX_FACT_LENGTH) {
+    return c.json({ error: `"fact" must be ${MAX_FACT_LENGTH} characters or fewer.` }, 400);
+  }
+
+  const id = await submitFact(c.env.DB, trimmed);
+
+  return c.json(
+    {
+      id: toPublicFactId(id),
+      status: 'pending_review',
+      message: "Submission received and entered into editorial review. Published submissions are selected at UIaaS's sole discretion.",
+    },
+    201,
+  );
 });

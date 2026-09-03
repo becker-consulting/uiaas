@@ -1,3 +1,5 @@
+import { MAX_FACT_LENGTH } from './facts';
+
 /**
  * Hand-written, not generated — there's exactly one real endpoint, so a
  * schema-validation framework (e.g. @hono/zod-openapi) to derive this from
@@ -22,8 +24,9 @@ export const openApiSpec = {
       get: {
         summary: 'Retrieve one useless fact',
         description:
-          'Returns a single random fact, scored on our proprietary Negative Usefulness Index™. ' +
-          'Free, Pro, and Enterprise all hit this exact same operation.',
+          'Returns a single random *approved* fact, scored on our proprietary Negative Usefulness Index™. ' +
+          'Free, Pro, and Enterprise all hit this exact same operation. Submissions via POST /fact are not ' +
+          'eligible until they clear editorial review.',
         operationId: 'getFact',
         responses: {
           '200': {
@@ -52,7 +55,45 @@ export const openApiSpec = {
             },
           },
           '503': {
-            description: 'No facts available. Enterprise support has been notified (it has not).',
+            description: 'No approved facts available. Enterprise support has been notified (it has not).',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/Error' } },
+            },
+          },
+        },
+      },
+      post: {
+        summary: 'Submit a new useless fact',
+        description:
+          'Open to anyone — no authentication required. A submission is never immediately live: it enters ' +
+          'editorial review and GET /fact will not return it until approved. Publication is not guaranteed.',
+        operationId: 'submitFact',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/FactSubmission' },
+              example: { fact: 'The Golden Gate Bridge is not gold — it is painted "International Orange."' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Submission received and queued for review.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SubmissionReceipt' },
+                example: {
+                  id: 'uiaas_00016',
+                  status: 'pending_review',
+                  message:
+                    "Submission received and entered into editorial review. Published submissions are selected at UIaaS's sole discretion.",
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Missing, empty, or oversized "fact" field, or a non-JSON request body.',
             content: {
               'application/json': { schema: { $ref: '#/components/schemas/Error' } },
             },
@@ -88,6 +129,26 @@ export const openApiSpec = {
             enum: ['any'],
             description: 'Which pricing tier is required to call this endpoint. Always "any" — see CLAUDE.md.',
           },
+        },
+      },
+      FactSubmission: {
+        type: 'object',
+        required: ['fact'],
+        properties: {
+          fact: {
+            type: 'string',
+            maxLength: MAX_FACT_LENGTH,
+            description: 'The fact being submitted. Scored and reviewed after submission, not by the submitter.',
+          },
+        },
+      },
+      SubmissionReceipt: {
+        type: 'object',
+        required: ['id', 'status', 'message'],
+        properties: {
+          id: { type: 'string', pattern: '^uiaas_\\d{5}$', description: 'Public id assigned to the submission.' },
+          status: { type: 'string', enum: ['pending_review'], description: 'Always "pending_review" on success.' },
+          message: { type: 'string' },
         },
       },
       Error: {
