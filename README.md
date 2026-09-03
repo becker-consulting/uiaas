@@ -55,6 +55,15 @@ npm run dev                # wrangler dev — http://localhost:8787
 `npm run dev` works against the **local** D1 database without any Cloudflare
 account — only `db:*:remote` and `deploy` need `wrangler login`.
 
+**Getting a 500 from `/api/v1/fact`?** The local D1 database lives in
+`.wrangler/state/` and persists across `wrangler dev` restarts on its own —
+but it's git-ignored and gone if that folder's ever deleted (e.g. clearing
+local state, or a fresh checkout). Re-run `npm run db:migrate:local && npm
+run db:seed:local` to restore it. An unhandled D1 error (missing table
+included) surfaces as `{"error": "Something broke. Enterprise support has
+been notified (it has not)."}` — see `app.onError` in `src/index.tsx` — never
+a bare unhandled exception.
+
 **Port collision heads up:** `wrangler dev` defaults to port 8787. If a sibling
 `@becker-solutions` project's own `wrangler dev` is already running, it can win
 that port — requests then silently go to *that* worker instead of failing to
