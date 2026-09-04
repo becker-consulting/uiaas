@@ -361,12 +361,4 @@ footer.site .beg-footer { margin: 18px 0; }
 }
 .built-by a:hover { color: var(--brand-bright); }
 
-/* Nav has four items (logo, Pricing, API, the CTA button) fighting for one
-   row — "Sponsor an Endpoint" is long enough that something has to give
-   before the CTA does. Secondary text links go first; the wordmark and the
-   CTA are what actually matter at this width. */
-@media (max-width: 480px) {
-  .nav-links { gap: 12px; }
-  .nav-links a:not(.btn) { display: none; }
-}
 `;
