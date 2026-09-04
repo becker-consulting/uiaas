@@ -1,6 +1,12 @@
 import { env, exports as workerExports } from 'cloudflare:workers';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { MAX_FACT_LENGTH, getApprovedFactCount, getApprovedFactCountCached, uselessnessLabel } from '../src/lib/facts';
+import {
+  MAX_FACT_LENGTH,
+  getApprovedFactCount,
+  getApprovedFactCountCached,
+  getApprovedFactsCached,
+  uselessnessLabel,
+} from '../src/lib/facts';
 // `?raw` inlines each migration's SQL as a string at build time, so setting
 // up the test database needs no runtime filesystem access (unavailable
 // inside the Workers runtime these tests execute in) — see migrations/,
@@ -239,6 +245,34 @@ describe('Fact count caching', () => {
     // insert really happened and isn't somehow being masked by the cache.
     const uncached = await getApprovedFactCount(env.DB);
     expect(uncached).toBe(2);
+  });
+});
+
+// Same shared cache underlies getRandomFact (routes/api.ts) — verified
+// independently here rather than only indirectly through GET /fact, since a
+// randomly-picked fact wouldn't reliably prove staleness on its own.
+describe('Fact list caching (backs getRandomFact)', () => {
+  it('serves a stale approved-facts list from cache until the underlying data is queried fresh', async () => {
+    const before = await getApprovedFactsCached(env.DB);
+    const countBefore = before.length;
+    expect(before.some((f) => f.fact === 'CACHE_LIST_STALENESS_PROBE_FACT')).toBe(false);
+
+    await env.DB.prepare('INSERT INTO facts (fact, usefulness, approved) VALUES (?, 0, TRUE)')
+      .bind('CACHE_LIST_STALENESS_PROBE_FACT')
+      .run();
+
+    // Cached list is unchanged even though a matching approved row now
+    // exists — proving this reads from cache, not re-querying D1 every time.
+    const stillCached = await getApprovedFactsCached(env.DB);
+    expect(stillCached.length).toBe(countBefore);
+    expect(stillCached.some((f) => f.fact === 'CACHE_LIST_STALENESS_PROBE_FACT')).toBe(false);
+
+    // The underlying data genuinely changed; a direct, uncached query proves
+    // the insert really happened and isn't somehow masked by the cache.
+    const row = await env.DB.prepare('SELECT COUNT(*) as count FROM facts WHERE approved = TRUE AND fact = ?')
+      .bind('CACHE_LIST_STALENESS_PROBE_FACT')
+      .first<{ count: number }>();
+    expect(row?.count).toBe(1);
   });
 });
 
