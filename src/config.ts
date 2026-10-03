@@ -29,3 +29,16 @@ export const COMPANY_LOCATION = 'Sweden';
  * used here too.
  */
 export const SITE_URL = 'https://uiaas.becker-consulting.se';
+
+/**
+ * Whether search engines may index the site. Off while the AdSense review of
+ * becker-consulting.se is pending: this Worker answers on a subdomain of that
+ * domain, and a parody built to serve useless information is the last thing
+ * an AdSense "low value content" check should find there. Every response
+ * carries a matching `X-Robots-Tag` (src/index.tsx) and the landing page a
+ * matching robots meta tag (Landing.tsx). Link previews on LinkedIn and
+ * elsewhere are unaffected. Flip back to `true` once the review is through.
+ */
+export const SEARCH_INDEXING = false;
+
+export const ROBOTS = SEARCH_INDEXING ? 'index, follow' : 'noindex, follow';

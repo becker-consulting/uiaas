@@ -5,8 +5,17 @@ import { api } from './routes/api';
 import { getApprovedFactCountCached } from './lib/facts';
 import { Landing } from './pages/Landing';
 import { ogImageSvg } from './pages/ogImage';
+import { ROBOTS } from './config';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Search-engine indexing for every response — landing page, /docs, the API
+// and the OG image alike — from the one switch in config.ts. App-wide by
+// nature, which is why it lives here rather than in a route.
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Robots-Tag', ROBOTS);
+});
 
 app.route('/api/v1', api);
 
