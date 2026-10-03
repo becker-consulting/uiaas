@@ -71,6 +71,13 @@ name="description">` and calling it done.
   crawler has historically been pickier about non-raster preview images —
   if a Twitter Card ever needs pixel-perfect fidelity, rasterizing this
   (e.g. via `resvg-wasm`) is the next step, not a rewrite.
+- **Search indexing is switched off for now** — `SEARCH_INDEXING` in
+  `src/config.ts` drives both the landing page's robots meta tag and an
+  app-wide `X-Robots-Tag` header (`src/index.tsx`), so `/docs`, the API and
+  the OG image are covered too. Off while the AdSense review of
+  becker-consulting.se is pending, since this Worker is a subdomain of it;
+  link previews (LinkedIn etc.) don't care. Flip it back to `true` once the
+  review is through, rather than removing the mechanism.
 - Keep `PAGE_TITLE`/`PAGE_DESCRIPTION` (top of `Landing.tsx`) as the single
   source both the plain `<meta name="description">` and every OG/Twitter
   variant reuse — don't let the social-preview copy drift from the page's

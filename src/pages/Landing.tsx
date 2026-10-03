@@ -1,6 +1,6 @@
 import { css } from './styles';
 import { faviconHref } from './favicon';
-import { BUY_ME_A_COFFEE_URL, COMPANY_LOCATION, COMPANY_NAME, COMPANY_URL, SITE_URL } from '../config';
+import { BUY_ME_A_COFFEE_URL, COMPANY_LOCATION, COMPANY_NAME, COMPANY_URL, ROBOTS, SITE_URL } from '../config';
 
 const PAGE_TITLE = 'UIaaS — Useless Information as a Service';
 const PAGE_DESCRIPTION =
@@ -217,7 +217,7 @@ export function Landing({ factCount }: { factCount: number }) {
         <title>{PAGE_TITLE}</title>
         <meta name="description" content={PAGE_DESCRIPTION} />
         <meta name="author" content={COMPANY_NAME} />
-        <meta name="robots" content="index, follow" />
+        <meta name="robots" content={ROBOTS} />
         <link rel="canonical" href={SITE_URL} />
         <meta name="theme-color" content="#08080c" />
         <link rel="icon" type="image/svg+xml" href={faviconHref} />

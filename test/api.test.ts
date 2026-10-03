@@ -13,6 +13,7 @@ import {
 // the single source of truth for this schema.
 import createFactsTable from '../migrations/0001_create_facts_table.sql?raw';
 import addApprovedColumn from '../migrations/0002_add_approved_column.sql?raw';
+import { ROBOTS, SEARCH_INDEXING } from '../src/config';
 
 beforeAll(async () => {
   // `.prepare()` (a real SQL parse) rather than `.exec()` — `.exec()` splits
@@ -208,6 +209,16 @@ describe('GET /', () => {
     expect(html).toContain('<meta property="og:image" content="https://uiaas.becker-consulting.se/og-image.svg"/>');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image"/>');
     expect(html).toContain('"@type":"WebSite"');
+  });
+
+  it('asks search engines not to index the site while indexing is switched off', async () => {
+    for (const path of ['/', '/docs', '/api/v1/fact', '/og-image.svg']) {
+      const res = await workerExports.default.fetch(new Request(`https://example.com${path}`));
+      expect(res.headers.get('X-Robots-Tag')).toBe(ROBOTS);
+    }
+    const html = await (await workerExports.default.fetch(new Request('https://example.com/'))).text();
+    expect(html).toContain(`<meta name="robots" content="${ROBOTS}"/>`);
+    expect(ROBOTS).toBe(SEARCH_INDEXING ? 'index, follow' : 'noindex, follow');
   });
 
   it('displays the current approved fact count', async () => {
