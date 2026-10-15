@@ -10,6 +10,11 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # vitest 5 breaks @cloudflare/vitest-plugin 1.4.2 (test files crash with a .vitest-cache
+      # readAll error). Remove once the plugin works with vitest 5.
+      - dependency-name: vitest
+        update-types: ["version-update:semver-major"]
     groups:
       # One PR for all routine bumps instead of one per package.
       minor-and-patch:
