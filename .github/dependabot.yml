@@ -15,7 +15,15 @@ updates:
       # readAll error). Remove once the plugin works with vitest 5.
       - dependency-name: vitest
         update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
     groups:
+      # The Workers test plugin pins a vitest range, so the two only move together.
+      vitest:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@cloudflare/vitest-plugin"
       # One PR for all routine bumps instead of one per package.
       minor-and-patch:
         update-types:
