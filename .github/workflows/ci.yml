@@ -7,6 +7,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# Both jobs only read the repo; Cloudflare access goes through the secrets below.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
