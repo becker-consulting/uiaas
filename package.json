@@ -19,12 +19,12 @@
     "db:seed:remote": "wrangler d1 execute uiaas-db --remote --file=./seed.sql"
   },
   "dependencies": {
-    "@hono/swagger-ui": "^0.6.1",
-    "hono": "^4.13.14"
+    "@hono/swagger-ui": "^0.6.2",
+    "hono": "^4.13.16"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.12",
-    "@types/node": "^26.6.5",
+    "@cloudflare/vitest-plugin": "^1.6.0",
+    "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
     "vitest": "^4.1.12",
     "wrangler": "^4.151.2"
