@@ -20,14 +20,14 @@
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.6.2",
-    "hono": "^4.13.19"
+    "hono": "^4.13.21"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.8.3",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
     "vitest": "^4.1.12",
-    "wrangler": "^4.163.0"
+    "wrangler": "^4.166.0"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
